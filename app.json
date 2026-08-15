@@ -11,15 +11,45 @@
     "no": "LINAK-seng"
   },
   "description": {
-    "en": "Control a LINAK TD4 adjustable bed through an ESPHome Bluetooth proxy.",
-    "no": "Styr en regulerbar LINAK TD4-seng gjennom en ESPHome Bluetooth-proxy."
+    "en": "Control a LINAK adjustable bed through an ESP32 running ESPHome as a Bluetooth proxy. Local, no cloud.",
+    "no": "Styr en regulerbar LINAK-seng gjennom en ESP32 som kjører ESPHome som Bluetooth-proxy. Lokalt, uten sky."
   },
   "category": [
     "appliances"
   ],
+  "tags": {
+    "en": [
+      "linak",
+      "bed",
+      "adjustable bed",
+      "td4",
+      "svane",
+      "esphome",
+      "bluetooth",
+      "ble",
+      "esp32"
+    ],
+    "no": [
+      "linak",
+      "seng",
+      "regulerbar seng",
+      "td4",
+      "svane",
+      "esphome",
+      "bluetooth",
+      "ble",
+      "esp32"
+    ]
+  },
   "brandColor": "#004B76",
   "author": {
     "name": "Thomas Torp"
+  },
+  "homepage": "https://github.com/torp93/homey-linak-bed-control",
+  "support": "https://github.com/torp93/homey-linak-bed-control/issues",
+  "source": "https://github.com/torp93/homey-linak-bed-control",
+  "bugs": {
+    "url": "https://github.com/torp93/homey-linak-bed-control/issues"
   },
   "images": {
     "small": "/assets/images/small.png",
