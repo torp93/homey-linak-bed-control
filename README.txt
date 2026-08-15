@@ -29,10 +29,10 @@ FEATURES
 REQUIREMENTS
 
 - A LINAK adjustable bed that advertises over Bluetooth as "Bed" followed by
-  a number. Developed and tested against two Svane Zefir beds with LINAK TD4
-  Advanced control boxes; other LINAK beds share the same Bluetooth service
-  and are likely to work, but are untested — feedback from other beds and
-  brands is very welcome.
+  a number. Developed and tested against two Svane Zefir beds with LINAK TD5
+  control boxes. TD4 uses the same Bluetooth protocol and is expected to work;
+  other LINAK beds share the same service and are likely to work too, but are
+  untested — feedback from other beds and brands is very welcome.
 - An ESP32 (a basic ESP32-C3 is enough) running ESPHome with the
   bluetooth_proxy component, placed near the bed with clear line of sight.
   Enter its address in the app settings after installation. A complete,

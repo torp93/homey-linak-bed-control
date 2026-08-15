@@ -1,8 +1,8 @@
 {
   "name": "com.thomastorp.linak-bed",
-  "version": "0.10.2",
+  "version": "1.0.0",
   "private": true,
-  "description": "LINAK TD4 adjustable bed for Homey Pro, over an ESPHome Bluetooth proxy",
+  "description": "LINAK TD4/TD5 adjustable bed for Homey Pro, over an ESPHome Bluetooth proxy",
   "main": "app.js",
   "scripts": {
     "test": "node --test test/linak-bed-protocol.test.js test/proxy-config.test.js test/esphome-wire.test.js test/capability-migration.test.js test/bed-proxy.test.js"

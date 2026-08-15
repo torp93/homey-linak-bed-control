@@ -1,13 +1,15 @@
 # LINAK Bed for Homey
 
-Control a **LINAK TD4 Advanced** adjustable bed from a Homey Pro over Bluetooth
+Control a **LINAK TD4/TD5** adjustable bed from a Homey Pro over Bluetooth
 LE, through an **ESP32 running ESPHome**. No cloud, no manufacturer account, no
 dependency on the LINAK app.
 
-Built for and verified against two Svane Zefir beds with LINAK TD4 control
-boxes. The command set was reverse-engineered against the actual hardware —
-see [What was learned about the protocol](#what-was-learned-about-the-protocol),
+Built for and verified against two Svane Zefir beds with LINAK **TD5** control
+boxes. The command set was reverse-engineered against that hardware — see
+[What was learned about the protocol](#what-was-learned-about-the-protocol),
 which corrects several details that are wrong in the public documentation.
+LINAK's published TD4 procedure matched what the TD5 actually does, so TD4 is
+expected to work as well; reports from other beds are welcome.
 
 ## Screenshots
 
@@ -36,7 +38,7 @@ the safety net if a stop never arrives.
 ## Architecture
 
 ```
-Homey Pro  ──TCP 6053──▶  ESP32-C3 (ESPHome)  ──BLE──▶  LINAK TD4 control box
+Homey Pro  ──TCP 6053──▶  ESP32-C3 (ESPHome)  ──BLE──▶  LINAK TD4/TD5 control box
            native API          bluetooth_proxy           99fa0002 / 99fa0011
 ```
 
@@ -54,7 +56,7 @@ controller at a time. Set the linger to 0 to disconnect immediately instead.
 
 - Homey Pro (tested on Homey Pro 2023, firmware ≥ 12.2.0)
 - An ESP32 running ESPHome with `bluetooth_proxy`, placed near the bed
-- A LINAK bed that advertises as `Bed NNNN` (TD4 Advanced and relatives)
+- A LINAK bed that advertises as `Bed NNNN` (TD5, TD4 and relatives)
 
 Aim for better than **−70 dBm** between the ESP32 and the bed. Below that the
 link fails in confusing ways: connection succeeds, then GATT times out.
@@ -114,10 +116,10 @@ Motor commands must be repeated every 100 ms; the motor stops on its own within
 
 ### Corrections to the public documentation
 
-- **`0x03`/`0x02` are not "head up/down".** They do nothing on a TD4. The upper
+- **`0x03`/`0x02` are not "head up/down".** They do nothing on a TD5. The upper
   section is `0x0B`/`0x0A` — "back" in LINAK's terminology.
 - **The per-actuator position characteristics don't exist.** `99fa0025`–`99fa0028`
-  and battery `99fa0061` are absent; this bed exposes one status characteristic
+  and battery `99fa0061` are absent; the bed exposes one status characteristic
   `99fa0003` and the DPG pair `99fa0010`/`99fa0011`. There is no readable position.
 - **The control service is `99fa0001`**, not `99fa0000` as desk implementations use.
 

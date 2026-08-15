@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "0.10.2",
+  "version": "1.0.0",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -11,8 +11,8 @@
     "no": "LINAK-seng"
   },
   "description": {
-    "en": "Control a LINAK adjustable bed through an ESP32 running ESPHome as a Bluetooth proxy. Local, no cloud.",
-    "no": "Styr en regulerbar LINAK-seng gjennom en ESP32 som kjører ESPHome som Bluetooth-proxy. Lokalt, uten sky."
+    "en": "Control a LINAK TD4 or TD5 adjustable bed through an ESP32 running ESPHome as a Bluetooth proxy. Local, no cloud.",
+    "no": "Styr en regulerbar LINAK-seng (TD4/TD5) gjennom en ESP32 som kjører ESPHome som Bluetooth-proxy. Lokalt, uten sky."
   },
   "category": [
     "appliances"
@@ -22,6 +22,7 @@
       "linak",
       "bed",
       "adjustable bed",
+      "td5",
       "td4",
       "svane",
       "esphome",
@@ -33,6 +34,7 @@
       "linak",
       "seng",
       "regulerbar seng",
+      "td5",
       "td4",
       "svane",
       "esphome",
