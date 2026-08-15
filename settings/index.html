@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 16px; }
+    h2 { margin: 0 0 4px; font-size: 17px; }
+    p.hint { margin: 0 0 18px; color: #666; font-size: 13px; line-height: 1.45; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+    input {
+      width: 100%; box-sizing: border-box; padding: 9px 10px; font-size: 15px;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    .row { display: flex; gap: 10px; margin-top: 18px; }
+    button {
+      flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
+      border-radius: 6px; border: 1px solid #ccc; background: #f5f5f5; cursor: pointer;
+    }
+    button.primary { background: #1f8fff; border-color: #1f8fff; color: #fff; }
+    button[disabled] { opacity: .55; cursor: default; }
+    #result { margin-top: 16px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .ok { color: #157a3c; }
+    .bad { color: #b3261e; }
+  </style>
+</head>
+<body>
+
+  <h2 data-i18n="title">ESPHome Bluetooth proxy</h2>
+  <p class="hint" data-i18n="hint"></p>
+
+  <label data-i18n="hostLabel">Address</label>
+  <input type="text" id="host" placeholder="192.168.10.14" autocapitalize="off" spellcheck="false" />
+
+  <label data-i18n="portLabel">Port</label>
+  <input type="number" id="port" placeholder="6053" min="1" max="65535" />
+
+  <div class="row">
+    <button id="test" data-i18n="test">Test connection</button>
+    <button id="save" class="primary" data-i18n="save">Save</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script type="text/javascript">
+    const STRINGS = {
+      en: {
+        title: 'ESPHome Bluetooth proxy',
+        hint: 'This app reaches the bed through an ESP32 running ESPHome with '
+            + 'bluetooth_proxy, not through Homey’s own Bluetooth. Enter the address '
+            + 'of that ESP32. Place it near the bed — below −70 dBm the link gets '
+            + 'unreliable. Use a fixed IP so it does not move.',
+        hostLabel: 'Address',
+        portLabel: 'Port (native API, normally 6053)',
+        test: 'Test connection',
+        save: 'Save',
+        testing: 'Contacting the proxy…',
+        saved: 'Saved.',
+        invalidHost: 'Enter a valid IP address or hostname.',
+        invalidPort: 'Port must be between 1 and 65535.',
+        noProxy: 'Connected, but this device has no bluetooth_proxy enabled. '
+               + 'Add bluetooth_proxy and esp32_ble_tracker to its ESPHome config.',
+        failed: 'Could not reach the proxy'
+      },
+      no: {
+        title: 'ESPHome Bluetooth-proxy',
+        hint: 'Appen når sengen gjennom en ESP32 som kjører ESPHome med '
+            + 'bluetooth_proxy, ikke gjennom Homeys egen Bluetooth. Skriv inn adressen '
+            + 'til denne ESP32-en. Plasser den nær sengen — under −70 dBm blir '
+            + 'forbindelsen ustabil. Bruk fast IP så den ikke flytter seg.',
+        hostLabel: 'Adresse',
+        portLabel: 'Port (native API, normalt 6053)',
+        test: 'Test tilkobling',
+        save: 'Lagre',
+        testing: 'Kontakter proxyen…',
+        saved: 'Lagret.',
+        invalidHost: 'Skriv inn en gyldig IP-adresse eller vertsnavn.',
+        invalidPort: 'Porten må være mellom 1 og 65535.',
+        noProxy: 'Tilkoblet, men denne enheten har ikke bluetooth_proxy slått på. '
+               + 'Legg til bluetooth_proxy og esp32_ble_tracker i ESPHome-konfigen.',
+        failed: 'Fikk ikke kontakt med proxyen'
+      }
+    };
+
+    let T = STRINGS.en;
+
+    function onHomeyReady(Homey) {
+      T = STRINGS[Homey.getLanguage && Homey.getLanguage() === 'no' ? 'no' : 'en'];
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        const key = el.getAttribute('data-i18n');
+        if (T[key]) el.textContent = T[key];
+      });
+
+      const hostEl = document.getElementById('host');
+      const portEl = document.getElementById('port');
+      const resultEl = document.getElementById('result');
+
+      Homey.get('proxyHost', function (err, value) { if (!err && value) hostEl.value = value; });
+      Homey.get('proxyPort', function (err, value) { portEl.value = (!err && value) ? value : 6053; });
+
+      function readInputs() {
+        const host = hostEl.value.trim();
+        const port = Number(portEl.value || 6053);
+        if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show(T.invalidHost, 'bad'); return null; }
+        if (!Number.isInteger(port) || port < 1 || port > 65535) { show(T.invalidPort, 'bad'); return null; }
+        return { host: host, port: port };
+      }
+
+      function show(text, cls) {
+        resultEl.textContent = text;
+        resultEl.className = cls || '';
+      }
+
+      document.getElementById('test').addEventListener('click', function () {
+        const input = readInputs();
+        if (!input) return;
+        show(T.testing, '');
+        this.disabled = true;
+        const button = this;
+        Homey.api(
+          'GET',
+          '/testProxy?host=' + encodeURIComponent(input.host) + '&port=' + input.port,
+          null,
+          function (err, result) {
+            button.disabled = false;
+            if (err) { show(T.failed + ': ' + (err.message || err), 'bad'); return; }
+            const lines = [
+              result.name,
+              'ESPHome ' + result.esphomeVersion + '  ·  ' + result.model,
+              result.macAddress
+            ].join('\n');
+            if (!result.bluetoothProxy) { show(lines + '\n\n' + T.noProxy, 'bad'); return; }
+            show('✓ ' + lines, 'ok');
+          }
+        );
+      });
+
+      document.getElementById('save').addEventListener('click', function () {
+        const input = readInputs();
+        if (!input) return;
+        Homey.set('proxyHost', input.host, function (err) {
+          if (err) { show(String(err.message || err), 'bad'); return; }
+          Homey.set('proxyPort', input.port, function (err2) {
+            if (err2) { show(String(err2.message || err2), 'bad'); return; }
+            show(T.saved, 'ok');
+          });
+        });
+      });
+
+      Homey.ready();
+    }
+  </script>
+</body>
+</html>

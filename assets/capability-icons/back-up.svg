@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="500" height="500" fill="currentColor">
+  <g transform="translate(1.6 2.2) scale(0.78)"><path d="M7.41,18.41L6,17L12,11L18,17L16.59,18.41L12,13.83L7.41,18.41M7.41,12.41L6,11L12,5L18,11L16.59,12.41L12,7.83L7.41,12.41Z" /></g>
+  <polygon points="21.0,24.8 9.5,18.4 7.5,22.0 19.0,28.4" /><circle cx="20" cy="26.6" r="2.10" /><circle cx="8.5" cy="20.2" r="2.10" /><polygon points="20.0,28.7 40.0,28.7 40.0,24.5 20.0,24.5" /><circle cx="20" cy="26.6" r="2.10" /><circle cx="40" cy="26.6" r="2.10" />
+  <rect x="6" y="30" width="36" height="4.6" rx="1.4" /><rect x="9" y="34.6" width="2.2" height="3.4" rx="1" /><rect x="36.6" y="34.6" width="2.2" height="3.4" rx="1" />
+</svg>

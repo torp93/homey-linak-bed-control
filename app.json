@@ -1,0 +1,529 @@
+{
+  "id": "com.thomastorp.linak-bed",
+  "version": "0.10.2",
+  "compatibility": ">=12.2.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "LINAK Bed",
+    "no": "LINAK-seng"
+  },
+  "description": {
+    "en": "Control a LINAK TD4 adjustable bed through an ESPHome Bluetooth proxy.",
+    "no": "Styr en regulerbar LINAK TD4-seng gjennom en ESPHome Bluetooth-proxy."
+  },
+  "category": [
+    "appliances"
+  ],
+  "brandColor": "#004B76",
+  "author": {
+    "name": "Thomas Torp"
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "api": {
+    "testProxy": {
+      "method": "GET",
+      "path": "/testProxy"
+    }
+  },
+  "capabilities": {
+    "linak_bed_connection": {
+      "type": "enum",
+      "title": {
+        "en": "Connection",
+        "no": "Tilkobling"
+      },
+      "values": [
+        {
+          "id": "idle",
+          "title": {
+            "en": "Ready",
+            "no": "Klar"
+          }
+        },
+        {
+          "id": "moving",
+          "title": {
+            "en": "Moving",
+            "no": "I bevegelse"
+          }
+        },
+        {
+          "id": "busy",
+          "title": {
+            "en": "Working",
+            "no": "Arbeider"
+          }
+        },
+        {
+          "id": "error",
+          "title": {
+            "en": "Error",
+            "no": "Feil"
+          }
+        }
+      ],
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capability-icons/connection.svg"
+    },
+    "linak_bed_leg_up": {
+      "type": "boolean",
+      "title": {
+        "en": "Foot end up",
+        "no": "Beinende opp"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/leg-up.svg"
+    },
+    "linak_bed_leg_down": {
+      "type": "boolean",
+      "title": {
+        "en": "Foot end down",
+        "no": "Beinende ned"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/leg-down.svg"
+    },
+    "linak_bed_back_up": {
+      "type": "boolean",
+      "title": {
+        "en": "Head end up",
+        "no": "Øvre del opp"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/back-up.svg"
+    },
+    "linak_bed_back_down": {
+      "type": "boolean",
+      "title": {
+        "en": "Head end down",
+        "no": "Øvre del ned"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/back-down.svg"
+    },
+    "linak_bed_both_up": {
+      "type": "boolean",
+      "title": {
+        "en": "Both up",
+        "no": "Begge opp"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/both-up.svg"
+    },
+    "linak_bed_both_down": {
+      "type": "boolean",
+      "title": {
+        "en": "Both down",
+        "no": "Begge ned"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/both-down.svg"
+    },
+    "linak_bed_stop": {
+      "type": "boolean",
+      "title": {
+        "en": "Stop",
+        "no": "Stopp"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/stop.svg"
+    },
+    "linak_bed_sit_up": {
+      "type": "boolean",
+      "title": {
+        "en": "Sit up",
+        "no": "Sittestilling"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/sit-up.svg"
+    },
+    "linak_bed_leg_relief": {
+      "type": "boolean",
+      "title": {
+        "en": "Leg relief",
+        "no": "Avlastning"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/leg-relief.svg"
+    },
+    "linak_bed_light": {
+      "type": "boolean",
+      "title": {
+        "en": "Light",
+        "no": "Lys"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/light.svg"
+    }
+  },
+  "flow": {
+    "actions": [
+      {
+        "id": "linak_bed_move",
+        "title": {
+          "en": "Move a section",
+          "no": "Kjør en seksjon"
+        },
+        "titleFormatted": {
+          "en": "Move [[section]] for [[duration]] seconds",
+          "no": "Kjør [[section]] i [[duration]] sekunder"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          },
+          {
+            "name": "section",
+            "type": "dropdown",
+            "title": {
+              "en": "Section",
+              "no": "Seksjon"
+            },
+            "values": [
+              {
+                "id": "bothUp",
+                "title": {
+                  "en": "Both up",
+                  "no": "Begge opp"
+                }
+              },
+              {
+                "id": "bothDown",
+                "title": {
+                  "en": "Both down",
+                  "no": "Begge ned"
+                }
+              },
+              {
+                "id": "legUp",
+                "title": {
+                  "en": "Foot end up",
+                  "no": "Beinende opp"
+                }
+              },
+              {
+                "id": "legDown",
+                "title": {
+                  "en": "Foot end down",
+                  "no": "Beinende ned"
+                }
+              },
+              {
+                "id": "backUp",
+                "title": {
+                  "en": "Head end up",
+                  "no": "Øvre del opp"
+                }
+              },
+              {
+                "id": "backDown",
+                "title": {
+                  "en": "Head end down",
+                  "no": "Øvre del ned"
+                }
+              },
+              {
+                "id": "sitUp",
+                "title": {
+                  "en": "Sit up (feet down, head up)",
+                  "no": "Sittestilling (bein ned, rygg opp)"
+                }
+              },
+              {
+                "id": "legRelief",
+                "title": {
+                  "en": "Leg relief (feet up, head down)",
+                  "no": "Avlastning (bein opp, rygg ned)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "duration",
+            "type": "number",
+            "title": {
+              "en": "Seconds",
+              "no": "Sekunder"
+            },
+            "min": 1,
+            "max": 120,
+            "step": 1,
+            "value": 4
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_stop_action",
+        "title": {
+          "en": "Stop all movement",
+          "no": "Stopp all bevegelse"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_light",
+        "title": {
+          "en": "Set the under-bed light",
+          "no": "Sett lyset under sengen"
+        },
+        "titleFormatted": {
+          "en": "Turn the under-bed light [[state]]",
+          "no": "Slå lyset under sengen [[state]]"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "title": {
+              "en": "State",
+              "no": "Tilstand"
+            },
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "no": "på"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "no": "av"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "linak_bed_condition_light",
+        "title": {
+          "en": "The under-bed light !{{is|is not}} on",
+          "no": "Lyset under sengen !{{er|er ikke}} på"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "id": "bed",
+      "name": {
+        "en": "LINAK Bed",
+        "no": "LINAK-seng"
+      },
+      "class": "other",
+      "capabilities": [
+        "linak_bed_back_up",
+        "linak_bed_back_down",
+        "linak_bed_leg_up",
+        "linak_bed_leg_down",
+        "linak_bed_light",
+        "linak_bed_stop",
+        "linak_bed_sit_up",
+        "linak_bed_leg_relief",
+        "linak_bed_both_up",
+        "linak_bed_both_down",
+        "linak_bed_connection",
+        "measure_signal_strength"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/bed/assets/images/small.png",
+        "large": "/drivers/bed/assets/images/large.png",
+        "xlarge": "/drivers/bed/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Safety",
+            "no": "Sikkerhet"
+          },
+          "children": [
+            {
+              "id": "maxRunSeconds",
+              "type": "number",
+              "label": {
+                "en": "Maximum run time",
+                "no": "Maksimal kjøretid"
+              },
+              "hint": {
+                "en": "The buttons run until you press Stop. This is the safety limit that ends the movement if a stop never arrives — not a normal run time.",
+                "no": "Knappene kjører til du trykker Stopp. Dette er sikkerhetsgrensen som avslutter bevegelsen hvis stoppen aldri kommer — ikke en normal kjøretid."
+              },
+              "value": 45,
+              "min": 5,
+              "max": 120,
+              "units": {
+                "en": "s",
+                "no": "s"
+              }
+            },
+            {
+              "id": "lingerSeconds",
+              "type": "number",
+              "label": {
+                "en": "Keep connection open",
+                "no": "Hold tilkoblingen åpen"
+              },
+              "hint": {
+                "en": "After a command, keep the Bluetooth link open this many seconds so the next button press responds instantly. While the link is open, the physical remote control does not work. 0 = disconnect immediately.",
+                "no": "Etter en kommando holdes Bluetooth-forbindelsen åpen så mange sekunder, slik at neste knappetrykk svarer umiddelbart. Mens forbindelsen er åpen virker ikke den fysiske fjernkontrollen. 0 = koble ned med én gang."
+              },
+              "value": 20,
+              "min": 0,
+              "max": 120,
+              "units": {
+                "en": "s",
+                "no": "s"
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Bluetooth",
+            "no": "Bluetooth"
+          },
+          "children": [
+            {
+              "id": "macAddress",
+              "type": "label",
+              "label": {
+                "en": "Bed address",
+                "no": "Sengens adresse"
+              },
+              "value": ""
+            },
+            {
+              "id": "advertisedName",
+              "type": "label",
+              "label": {
+                "en": "Advertised name",
+                "no": "Annonsert navn"
+              },
+              "value": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "all_beds",
+      "name": {
+        "en": "Both beds",
+        "no": "Begge senger"
+      },
+      "class": "other",
+      "capabilities": [
+        "linak_bed_back_up",
+        "linak_bed_back_down",
+        "linak_bed_leg_up",
+        "linak_bed_leg_down",
+        "linak_bed_light",
+        "linak_bed_stop",
+        "linak_bed_both_up",
+        "linak_bed_both_down",
+        "linak_bed_sit_up",
+        "linak_bed_leg_relief",
+        "linak_bed_connection"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/all_beds/assets/images/small.png",
+        "large": "/drivers/all_beds/assets/images/large.png",
+        "xlarge": "/drivers/all_beds/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
+    }
+  ]
+}

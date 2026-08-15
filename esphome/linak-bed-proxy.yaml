@@ -1,0 +1,132 @@
+# Board: Generic ESP32-C3 Board (Generic)
+# Sett DHCP-reservasjon eller manual_ip på kortets MAC.
+#
+# BLE-proxy nr. 2, plassert ved sengene. Samme arkitektur som
+# geberit-aquaclean-proxy: Homey-appen snakker ESPHome native API på 6053 og
+# gjør rå GATT gjennom bluetooth_proxy.
+#
+# C3-spesifikke hensyn arvet fra Geberit-oppsettet: én RISC-V-kjerne deles
+# mellom WiFi og BLE, 400 KB SRAM. Derfor esp-idf, BLE 5.0 avslått, og ingen
+# web_server/captive_portal — se kommentaren nederst.
+
+esphome:
+  name: linak-bed-proxy
+  friendly_name: LINAK Bed Proxy
+
+esp32:
+  variant: esp32c3
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: n   # BLE 5.0 av — frigjør ~40 KB RAM
+      CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y   # LINAK-tjenesten 99fa er BLE 4.x
+
+# Logger går over kortets native USB-CDC, ikke UART. Det er bevisst: første
+# flashing skjer over COM4, og da kan boot-loggen leses direkte for å bekrefte
+# WiFi-join og fange IP-adressen. Kan settes til baud_rate: 0 senere via OTA
+# hvis heap blir trangt.
+logger:
+  level: DEBUG
+  hardware_uart: USB_SERIAL_JTAG
+
+# ---------------------------------------------------------------------------
+# Native API på port 6053 — hit kobler Homey-appen seg.
+# Ukryptert plaintext: API 1.14 har fjernet passord-autentisering, og dette er
+# bekreftet fungerende mot Geberit-proxyen.
+# ---------------------------------------------------------------------------
+api:
+  # Ingen reboot ved manglende klient. Homey-appen kobler til ved første
+  # knappetrykk, ikke ved oppstart — med 15min-vakten rebootet ESP-en seg
+  # hvert kvarter hele natten så lenge ingen hadde trykket på noe. Kortet har
+  # fast IP, web_server og fysisk restart-knapp, så vakten trengs ikke.
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: NONE   # unngår WiFi/BLE-radiokonflikt på delt 2,4 GHz-radio
+
+  # Fast IP i firmwaren. DHCP-reservasjonen i Asus-ruteren slo ikke inn — kortet
+  # beholdt .5 også etter reboot — og ESPHome svarer ikke på ICMP, så ruteren
+  # regner den uansett som offline i klientlista. Da er dette den robuste veien.
+  manual_ip:
+    static_ip: 192.168.1.50   # tilpass ditt nett
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+    dns1: 192.168.1.1
+
+  # ESPHome-containeren på NAS-en kjører i bridge-nett, så mDNS når ikke fram og
+  # "linak-bed-proxy.local" løses ikke opp — OTA trenger en ren IP.
+  use_address: 192.168.1.50
+
+  # Redningsvei hvis WiFi-oppsettet slår feil: kortet setter opp sitt eget nett
+  # i stedet for å bli uoppnåelig. OTA fungerer mot 192.168.4.1 der.
+  ap:
+    ssid: LINAK Bed Proxy Fallback
+    password: !secret fallback_password
+
+# ---------------------------------------------------------------------------
+# BLE-proxy
+# active: true gir toveis GATT. Passiv scanning holder bare til å se
+# annonseringer — vi trenger å kunne koble opp mot sengene.
+# 320/200 ms (62,5 % duty cycle) er verdien som er bekreftet i drift på C3.
+# ---------------------------------------------------------------------------
+esp32_ble_tracker:
+  id: ble_tracker_id
+  scan_parameters:
+    active: true
+    interval: 320ms
+    window: 200ms
+
+bluetooth_proxy:
+  active: true
+  connection_slots: 2   # to senger = to samtidige GATT-forbindelser
+
+# ---------------------------------------------------------------------------
+# Restart      — Homey-appen kan trykke denne når BLE-scanneren henger.
+# Clear Bluetooth Cache — tømmer NVS inkl. NimBLE GATT-cache. Brukes ved
+#                ATT-feil 0x01 (Invalid Handle); vanlig reboot holder ikke,
+#                NVS overlever omstart.
+# ---------------------------------------------------------------------------
+button:
+  - platform: restart
+    name: "Restart Bed Proxy"
+
+  - platform: factory_reset
+    name: "Clear Bluetooth Cache"
+
+debug:
+
+sensor:
+  - platform: wifi_signal
+    name: "Bed Proxy WiFi Signal"
+    update_interval: 60s
+
+  # Heap-diagnostikk — det viktigste tallet på dette kortet.
+  # Faller "Max Free Block" under ~25 KB blir GATT upålitelig på en forvirrende
+  # måte: BLE kobler opp fint, men lesing timer ut.
+  - platform: debug
+    free:
+      name: "Bed Proxy Free Heap"
+    block:
+      name: "Bed Proxy Max Free Block"
+
+  - platform: uptime
+    name: "Bed Proxy Uptime"
+
+# ---------------------------------------------------------------------------
+# web_server slått på 2026-08-14 etter måling: Max Free Block lå på 94 KB uten,
+# og GATT blir først upålitelig under ~25 KB (trygg grense ~40 KB). Marginen
+# holder altså. captive_portal er FORTSATT utelatt — det er den som sammen med
+# web_server presset Geberit-kortet under grensen.
+#
+# Faller "Bed Proxy Max Free Block" under ~40 KB etter dette, eller BLE begynner
+# å vise connect → discovery → disconnect-løkker, er dette den første blokken
+# som skal ut igjen.
+# ---------------------------------------------------------------------------
+web_server:
+  port: 80
+  version: 3
