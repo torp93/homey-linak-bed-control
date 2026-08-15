@@ -1,5 +1,9 @@
 {
   "1.0.0": {
     "en": "First release. Head and foot sections, combined positions, under-bed light and stop, for one bed or all of them at once."
+  },
+  "1.0.1": {
+    "en": "Corrected the supported models: verified on LINAK TD5, with TD4 expected to work. New store images and description.",
+    "no": "Rettet hvilke modeller som støttes: verifisert på LINAK TD5, TD4 forventes å virke. Nye butikkbilder og beskrivelse."
   }
 }
