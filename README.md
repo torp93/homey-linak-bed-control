@@ -66,8 +66,35 @@ link fails in confusing ways: connection succeeds, then GATT times out.
 ### 1. Flash the ESP32
 
 [`esphome/linak-bed-proxy.yaml`](esphome/linak-bed-proxy.yaml) is the config
-this app is developed against. Adjust the IP addresses to your network and add
-`wifi_ssid`, `wifi_password` and `fallback_password` to your ESPHome secrets.
+this app is developed against. It references three values that are deliberately
+not in the file — put them in `secrets.yaml`, next to the config — [`secrets.yaml.example`](esphome/secrets.yaml.example) is there to copy:
+
+```yaml
+wifi_ssid: "YourNetwork"
+wifi_password: "your-wifi-password"
+fallback_password: "any-password-you-choose"    # for the setup hotspot
+```
+
+The config also pins a static address, so change `manual_ip` to fit your
+network — `static_ip` to a free address, `gateway` to your router, or drop the
+`manual_ip` block entirely and give the board a DHCP reservation instead. The
+address you land on is the one you enter when pairing the bed.
+
+Then build and flash it. The **first** flash has to go over USB, because the
+board has no firmware to update over the air yet:
+
+```bash
+esphome run esphome/linak-bed-proxy.yaml
+```
+
+Without ESPHome installed locally, the ESPHome Device Builder add-on does the
+same from a browser: add the config, compile, download the **factory** binary
+and write it with [web.esphome.io](https://web.esphome.io) over USB. Every flash
+after the first one goes over WiFi on its own.
+
+On an ESP32-C3 the USB port is the chip's own native USB. If the board comes up
+unresponsive after flashing, it is sitting in the ROM bootloader — a reset over
+the serial line does not always get it out, so unplug it and plug it back in.
 
 Notes that matter on an ESP32-C3:
 
@@ -93,8 +120,10 @@ reconnects freely afterwards.
 
 ### 3. Point the app at the proxy
 
-App settings take the ESP32's address and have a **Test connection** button
-that verifies the node is reachable and has `bluetooth_proxy` enabled.
+Pairing asks for the ESP32's address as its first step, with a **Test
+connection** button that verifies the node is reachable and has
+`bluetooth_proxy` enabled. The same address is in app settings afterwards, if
+the proxy ever moves.
 
 ## What was learned about the protocol
 
