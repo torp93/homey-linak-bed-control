@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -455,20 +455,14 @@
           "id": "prepare",
           "navigation": {
             "prev": "proxy",
-            "next": "list_devices"
+            "next": "search"
           }
         },
         {
-          "id": "list_devices",
-          "template": "list_devices",
+          "id": "search",
           "navigation": {
-            "prev": "prepare",
-            "next": "add_devices"
+            "prev": "prepare"
           }
-        },
-        {
-          "id": "add_devices",
-          "template": "add_devices"
         }
       ],
       "settings": [
@@ -581,22 +575,7 @@
       },
       "pair": [
         {
-          "id": "start",
-          "navigation": {
-            "next": "list_devices"
-          }
-        },
-        {
-          "id": "list_devices",
-          "template": "list_devices",
-          "navigation": {
-            "prev": "start",
-            "next": "add_devices"
-          }
-        },
-        {
-          "id": "add_devices",
-          "template": "add_devices"
+          "id": "start"
         }
       ]
     }

@@ -17,5 +17,9 @@
   "1.0.4": {
     "en": "The app icon now stays legible when Homey renders it in a single colour, and the product photo is back on the store images.",
     "no": "Appikonet holder seg lesbart når Homey rendrer det i én farge, og produktbildet er tilbake på butikkbildene."
+  },
+  "1.0.5": {
+    "en": "Fixes pairing, which failed with an error instead of searching for the bed.",
+    "no": "Retter paringen, som feilet med en feilmelding i stedet for å søke etter sengen."
   }
 }

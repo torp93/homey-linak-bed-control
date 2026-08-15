@@ -25,6 +25,10 @@ class BedDriver extends Homey.Driver {
       await this.homey.settings.set(SETTING_HOST, host.trim());
       return true;
     });
+
+    // Eget hendelsesnavn, ikke 'list_devices': det navnet er reservert for
+    // malen, og handleren kjøres aldri når man kommer fra en egen visning.
+    session.setHandler('find_beds', () => this.onPairListDevices());
   }
 
   async onPairListDevices() {
