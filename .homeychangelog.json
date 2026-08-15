@@ -5,5 +5,9 @@
   "1.0.1": {
     "en": "Corrected the supported models: verified on LINAK TD5, with TD4 expected to work. New store images and description.",
     "no": "Rettet hvilke modeller som støttes: verifisert på LINAK TD5, TD4 forventes å virke. Nye butikkbilder og beskrivelse."
+  },
+  "1.0.2": {
+    "en": "Device images now show the bed itself — one bed, or two side by side for the group device.",
+    "no": "Enhetsbildene viser nå selve sengen — én seng, eller to side ved side for gruppeenheten."
   }
 }
