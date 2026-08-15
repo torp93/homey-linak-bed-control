@@ -9,6 +9,16 @@ boxes. The command set was reverse-engineered against the actual hardware —
 see [What was learned about the protocol](#what-was-learned-about-the-protocol),
 which corrects several details that are wrong in the public documentation.
 
+## Screenshots
+
+Click to enlarge.
+
+<p>
+  <a href="docs/screenshots/bed-controls.jpg"><img src="docs/screenshots/bed-controls.jpg" alt="Bed controls" width="200"></a>
+  <a href="docs/screenshots/bed-controls-scrolled.jpg"><img src="docs/screenshots/bed-controls-scrolled.jpg" alt="Combined positions" width="200"></a>
+  <a href="docs/screenshots/both-beds.jpg"><img src="docs/screenshots/both-beds.jpg" alt="Both beds" width="200"></a>
+</p>
+
 ## Features
 
 - Head end and foot end, up and down
