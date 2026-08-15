@@ -13,5 +13,9 @@
   "1.0.3": {
     "en": "Pairing now guides you through the two-minute power cut the bed needs, and asks for the Bluetooth proxy address up front. Flow cards now work with \"Both beds\" too. New app icon and store images.",
     "no": "Paringen forklarer nå det to minutter lange strømbruddet sengen krever, og spør om adressen til Bluetooth-proxyen med én gang. Flow-kortene virker nå også med «Begge senger». Nytt appikon og nye butikkbilder."
+  },
+  "1.0.4": {
+    "en": "The app icon now stays legible when Homey renders it in a single colour, and the product photo is back on the store images.",
+    "no": "Appikonet holder seg lesbart når Homey rendrer det i én farge, og produktbildet er tilbake på butikkbildene."
   }
 }
