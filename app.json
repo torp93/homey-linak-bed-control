@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -11,8 +11,8 @@
     "no": "LINAK-seng"
   },
   "description": {
-    "en": "Control a LINAK TD4 or TD5 adjustable bed through an ESP32 running ESPHome as a Bluetooth proxy. Local, no cloud.",
-    "no": "Styr en regulerbar LINAK-seng (TD4/TD5) gjennom en ESP32 som kjører ESPHome som Bluetooth-proxy. Lokalt, uten sky."
+    "en": "Make your adjustable bed part of your smart home.",
+    "no": "Gjør den regulerbare sengen til en del av smarthjemmet."
   },
   "category": [
     "appliances"
@@ -46,6 +46,28 @@
   "brandColor": "#004B76",
   "author": {
     "name": "Thomas Torp"
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "Thomas Torp"
+      }
+    ],
+    "translators": [
+      {
+        "name": "Thomas Torp"
+      }
+    ]
+  },
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "torpthomas"
+      },
+      "githubSponsors": {
+        "username": "torp93"
+      }
+    }
   },
   "homepage": "https://github.com/torp93/homey-linak-bed-control",
   "support": "https://github.com/torp93/homey-linak-bed-control/issues",
@@ -233,7 +255,7 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=bed"
+            "filter": "driver_id=bed|all_beds"
           },
           {
             "name": "section",
@@ -325,7 +347,7 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=bed"
+            "filter": "driver_id=bed|all_beds"
           }
         ]
       },
@@ -343,7 +365,7 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=bed"
+            "filter": "driver_id=bed|all_beds"
           },
           {
             "name": "state",
@@ -383,7 +405,7 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=bed"
+            "filter": "driver_id=bed|all_beds"
           }
         ]
       }
@@ -424,9 +446,23 @@
       },
       "pair": [
         {
+          "id": "proxy",
+          "navigation": {
+            "next": "prepare"
+          }
+        },
+        {
+          "id": "prepare",
+          "navigation": {
+            "prev": "proxy",
+            "next": "list_devices"
+          }
+        },
+        {
           "id": "list_devices",
           "template": "list_devices",
           "navigation": {
+            "prev": "prepare",
             "next": "add_devices"
           }
         },
@@ -545,9 +581,16 @@
       },
       "pair": [
         {
+          "id": "start",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
           "id": "list_devices",
           "template": "list_devices",
           "navigation": {
+            "prev": "start",
             "next": "add_devices"
           }
         },

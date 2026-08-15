@@ -102,6 +102,34 @@ class AllBedsDevice extends Homey.Device {
 
     return true;
   }
+
+  // --- Flow ---------------------------------------------------------------
+  // Flow-kortene kaller de samme metodene på gruppa som på en enkelt seng, så
+  // kortene kan filtreres på begge driverne uten at app.js trenger å vite
+  // hvilken av dem den snakker med.
+
+  // Med varighet, i motsetning til knappene: et Flow-steg skal være ferdig når
+  // bevegelsen er ferdig, ellers går neste steg i gang mens sengen står midt i.
+  // Derfor runMotor og ikke pressMotor her.
+  async runMotor(command, durationSeconds, extraOptions = {}) {
+    return this.runOnAll((bed) => bed.runMotor(command, durationSeconds, extraOptions));
+  }
+
+  async stopMovement() {
+    return this.runOnAll((bed) => bed.stopMovement());
+  }
+
+  async setLight(on) {
+    await this.runOnAll((bed) => bed.setLight(on));
+    await this.setStoreValue('lightOn', on).catch(() => {});
+    return true;
+  }
+
+  // Gruppas egen huskede tilstand, satt av både knappen og Flow-kortet. Å
+  // spørre sengene ville gitt et vilkårlig svar når de står ulikt.
+  lightIsOn() {
+    return this.getStoreValue('lightOn') === true;
+  }
 }
 
 module.exports = AllBedsDevice;

@@ -1,0 +1,36 @@
+<!--
+  Steg 2: sett sengen i paringsmodus.
+
+  Dette er hele grunnen til at paringen har egne visninger. Sengen tar ikke imot
+  en ny tilkobling annet enn i et kort vindu rett etter at strømmen har vært
+  helt borte i to hele minutter. Uten denne beskjeden får brukeren en tom liste
+  og tror appen er ødelagt.
+-->
+<h1 class="homey-title">Sett sengen i paringsmodus</h1>
+<p class="homey-subtitle">
+  Sengen slipper bare inn en ny styreenhet rett etter at den har vært uten strøm
+  en stund. Dette gjøres én gang per seng.
+</p>
+
+<ol class="homey-text">
+  <li>Trekk ut støpselet til sengen.</li>
+  <li>
+    <strong>Vent to hele minutter.</strong> Kortere pauser gjør ingenting i det
+    hele tatt — sengen må rekke å gi helt slipp.
+  </li>
+  <li>Sett støpselet inn igjen. Lyset under sengen blinker.</li>
+  <li>Trykk «Søk etter sengen» innen tre minutter.</li>
+</ol>
+
+<p class="homey-form-help">
+  Har du to senger, gjør du dette for én om gangen. En seng som er lagt til
+  kobler seg fritt til siden, uten at dette må gjentas.
+</p>
+
+<button id="search" class="homey-button-primary-full">Søk etter sengen</button>
+
+<script type="text/javascript">
+  document.getElementById('search').addEventListener('click', () => {
+    Homey.showView('list_devices');
+  });
+</script>

@@ -1,0 +1,74 @@
+<!--
+  Steg 1 av paringen: hvor ESP32-proxyen finnes.
+
+  Adressen lå tidligere kun i appinnstillingene, som gjorde at paringen feilet
+  uten forklaring hvis brukeren ikke hadde vært innom dem først. Homey ber om at
+  informasjon appen trenger for å fungere hentes inn under paringen.
+
+  Ingen homey.js her og ingen onHomeyReady — Homey injiserer Homey-objektet selv
+  i paringsvisninger, og å laste skriptet på nytt gir en visning som henger.
+-->
+<h1 class="homey-title" data-i18n="pair.proxy.title">Bluetooth-proxyen</h1>
+<p class="homey-subtitle">
+  Appen snakker med sengen gjennom en ESP32 som kjører ESPHome. Skriv inn
+  adressen dens her.
+</p>
+
+<div class="homey-form-group">
+  <label class="homey-form-label" for="host">Adresse</label>
+  <input class="homey-form-input" id="host" type="text" placeholder="192.168.1.50" />
+  <p class="homey-form-help">
+    IP-adressen eller vertsnavnet til ESP32-en. Den bør stå nær sengen med fri
+    sikt — sengen sender svakt, og styringsboksen sitter under rammen.
+  </p>
+</div>
+
+<p id="status" class="homey-form-help"></p>
+
+<button id="test" class="homey-button-secondary-full">Test tilkoblingen</button>
+<button id="next" class="homey-button-primary-full">Fortsett</button>
+
+<script type="text/javascript">
+  const hostField = document.getElementById('host');
+  const status = document.getElementById('status');
+  const testButton = document.getElementById('test');
+  const nextButton = document.getElementById('next');
+
+  function show(message, ok) {
+    status.textContent = message;
+    status.style.color = ok === undefined ? '' : (ok ? '#3dbb6a' : '#e2574c');
+  }
+
+  Homey.emit('proxy_get')
+    .then((host) => { hostField.value = host || ''; })
+    .catch(() => {});
+
+  testButton.addEventListener('click', () => {
+    const host = hostField.value.trim();
+    if (!host) return show('Fyll inn adressen først.', false);
+
+    testButton.disabled = true;
+    show('Kobler til …');
+
+    return Homey.emit('proxy_test', host)
+      .then((result) => show(`Kontakt med ${result.name || host}.`, true))
+      .catch((error) => show(error.message || 'Fikk ikke kontakt.', false))
+      .finally(() => { testButton.disabled = false; });
+  });
+
+  // Adressen lagres før neste steg: skanningen i list_devices bruker den, og
+  // uten lagring ville den bare ligget i denne visningen.
+  nextButton.addEventListener('click', () => {
+    const host = hostField.value.trim();
+    if (!host) return show('Fyll inn adressen først.', false);
+
+    nextButton.disabled = true;
+
+    return Homey.emit('proxy_save', host)
+      .then(() => Homey.showView('prepare'))
+      .catch((error) => {
+        show(error.message || 'Kunne ikke lagre adressen.', false);
+        nextButton.disabled = false;
+      });
+  });
+</script>

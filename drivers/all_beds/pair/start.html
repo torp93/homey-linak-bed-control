@@ -1,0 +1,23 @@
+<!--
+  Gruppeenheten trenger ingen paring i vanlig forstand — den styrer sengene som
+  allerede finnes. Visningen er her for å si nettopp det, slik at ingen leter
+  etter en seng å velge.
+-->
+<h1 class="homey-title">Begge senger</h1>
+<p class="homey-subtitle">
+  Denne enheten sender hver kommando til alle sengene du har lagt til, samtidig.
+  Den er ment for en dobbeltseng som består av to separate rammer.
+</p>
+
+<p class="homey-text">
+  Legg til sengene hver for seg først. Denne enheten finner dem av seg selv, og
+  får med seg senger du legger til senere.
+</p>
+
+<button id="next" class="homey-button-primary-full">Fortsett</button>
+
+<script type="text/javascript">
+  document.getElementById('next').addEventListener('click', () => {
+    Homey.showView('list_devices');
+  });
+</script>

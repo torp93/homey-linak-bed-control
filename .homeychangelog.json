@@ -9,5 +9,9 @@
   "1.0.2": {
     "en": "Device images now show the bed itself — one bed, or two side by side for the group device.",
     "no": "Enhetsbildene viser nå selve sengen — én seng, eller to side ved side for gruppeenheten."
+  },
+  "1.0.3": {
+    "en": "Pairing now guides you through the two-minute power cut the bed needs, and asks for the Bluetooth proxy address up front. Flow cards now work with \"Both beds\" too. New app icon and store images.",
+    "no": "Paringen forklarer nå det to minutter lange strømbruddet sengen krever, og spør om adressen til Bluetooth-proxyen med én gang. Flow-kortene virker nå også med «Begge senger». Nytt appikon og nye butikkbilder."
   }
 }

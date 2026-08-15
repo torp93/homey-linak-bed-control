@@ -2,7 +2,11 @@
 
 const Homey = require('homey');
 const { BedProxy } = require('./lib/bed-proxy');
-const { resolveProxyConfig, SETTING_HOST, SETTING_PORT } = require('./lib/proxy-config');
+const { EsphomeApiClient } = require('./lib/esphome-api');
+const {
+  resolveProxyConfig, isValidHost, isValidPort,
+  SETTING_HOST, SETTING_PORT, DEFAULT_PORT,
+} = require('./lib/proxy-config');
 
 class LinakBedApp extends Homey.App {
   async onInit() {
@@ -33,6 +37,42 @@ class LinakBedApp extends Homey.App {
       this.log(`ESPHome BLE-proxy klient opprettet mot ${host}:${port}`);
     }
     return this._proxy;
+  }
+
+  // Kobler til, henter enhetsinfo og kobler ned igjen — ingen BLE involvert.
+  // Ligger her og ikke i api.js fordi både innstillingssiden og paringen bruker
+  // den; en seng som pares skal ikke kunne godta en proxy innstillingene avviser.
+  async testProxyConnection(host, port = DEFAULT_PORT) {
+    if (!isValidHost(host)) throw new Error('Ugyldig adresse');
+    if (!isValidPort(port)) throw new Error('Ugyldig port');
+
+    const client = new EsphomeApiClient({
+      host: host.trim(),
+      port,
+      clientInfo: 'homey-linak-bed-test',
+      log: (...args) => this.log('[test]', ...args),
+    });
+
+    // En 'error' uten lytter kaster og tar ned hele appen — og en test mot en
+    // proxy som er nede er nettopp situasjonen der socketfeil oppstår. Feilen
+    // rapporteres uansett via connect()-avvisningen under.
+    client.on('error', () => {});
+
+    try {
+      await client.connect({ timeoutMs: 8000 });
+      const info = await client.deviceInfo();
+      return {
+        name: info.friendlyName || info.name,
+        esphomeVersion: info.esphomeVersion,
+        model: info.model,
+        macAddress: info.macAddress,
+        // Uten bluetooth_proxy i konfigurasjonen er noden ubrukelig for oss,
+        // og feilen ville ellers først dukket opp under paring.
+        bluetoothProxy: info.bluetoothProxyFeatureFlags > 0,
+      };
+    } finally {
+      await client.close().catch(() => {});
+    }
   }
 
   resetProxy() {
