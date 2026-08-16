@@ -32,10 +32,19 @@ class BedDriver extends Homey.Driver {
       return true;
     });
 
-    // MÅ registreres eksplisitt. list_devices-malen kaller ikke
-    // onPairListDevices av seg selv når man kommer til den fra en egen visning
-    // — den viser bare en tom liste, uten feil noe sted.
+    // MÅ registreres eksplisitt. Malene kaller ikke onPairListDevices av seg
+    // selv når man kommer til dem fra en egen visning — de viser bare en tom
+    // liste, uten feil noe sted.
     session.setHandler('list_devices', () => this.onPairListDevices());
+
+    // Søkevisningen trenger mer enn lista: den må kunne skille «fant ingen
+    // seng» fra «fant sengen, men den er lagt til fra før». Malen viser samme
+    // tomme skjerm i begge tilfeller, og de krever helt ulik handling av
+    // brukeren — ta strømbruddet på nytt, kontra ingenting.
+    session.setHandler('search_beds', async () => {
+      const devices = await this.onPairListDevices();
+      return { devices, seen: this._lastSeen, known: this._lastKnown };
+    });
   }
 
   async onPairListDevices() {
@@ -64,6 +73,10 @@ class BedDriver extends Homey.Driver {
     if (fresh.length !== beds.length) {
       this.log(`${beds.length - fresh.length} seng(er) er lagt til fra før — utelatt`);
     }
+
+    // Tallene søkevisningen bruker for å forklare en tom liste.
+    this._lastSeen = beds.length;
+    this._lastKnown = beds.length - fresh.length;
 
     return fresh.map((bed) => ({
       name: bed.localName || `LINAK-seng ${bed.mac.slice(-5).replace(':', '')}`,

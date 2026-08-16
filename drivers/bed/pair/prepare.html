@@ -1,42 +1,49 @@
 <!--
-  Steg 2: sett sengen i paringsmodus.
+  Steg 3: sett sengen i paringsmodus.
 
   Dette er hele grunnen til at paringen har egne visninger. Sengen tar ikke imot
   en ny tilkobling annet enn i et kort vindu rett etter at strømmen har vært
   helt borte i to hele minutter. Uten denne beskjeden får brukeren en tom liste
   og tror appen er ødelagt.
+
+  Ingen overskrift i innholdet: Homey tegner tittelen selv i toppteksten.
 -->
-<h1 class="homey-title">Sett sengen i paringsmodus</h1>
-<p class="homey-subtitle">
-  Sengen slipper bare inn en ny styreenhet rett etter at den har vært uten strøm
-  en stund. Dette gjøres én gang per seng.
-</p>
-
-<ol class="homey-text">
-  <li>Trekk ut støpselet til sengen.</li>
-  <li>
-    <strong>Vent to hele minutter.</strong> Kortere pauser gjør ingenting i det
-    hele tatt — sengen må rekke å gi helt slipp.
-  </li>
-  <li>Sett støpselet inn igjen. Lyset under sengen blinker.</li>
-  <li>Trykk «Søk etter sengen» innen tre minutter.</li>
-</ol>
-
-<p class="homey-form-help">
-  Har du to senger, gjør du dette for én om gangen. En seng som er lagt til
-  kobler seg fritt til siden, uten at dette må gjentas.
-</p>
-
 <style>
-  .lb-btn { display: block; width: calc(100% - 48px); margin: 18px 24px 0; padding: 10px;
-            font-size: 0.95em; border-radius: 6px; cursor: pointer; border: 1px solid #004B76;
+  .lb-prep { padding: 0 24px; line-height: 1.5; }
+  .lb-prep ol { padding-left: 20px; }
+  .lb-prep li { margin-bottom: 10px; }
+  .lb-note { opacity: 0.7; font-size: 0.9em; margin-top: 18px; }
+  .lb-btn { display: block; width: 100%; margin-top: 18px; padding: 10px; font-size: 0.95em;
+            border-radius: 6px; cursor: pointer; border: 1px solid #004B76;
             background: #004B76; color: #fff; }
 </style>
 
-<button id="search" class="lb-btn">Søk etter sengen</button>
+<div class="lb-prep">
+  <p>Sengen slipper bare inn en ny styreenhet rett etter at den har vært uten
+     strøm en stund. Dette gjøres én gang per seng.</p>
+
+  <ol>
+    <li>Trekk ut støpselet til sengen.</li>
+    <li><strong>Vent to hele minutter.</strong> Kortere pauser gjør ingenting i
+        det hele tatt — sengen må rekke å gi helt slipp.</li>
+    <li>Sett støpselet inn igjen. Lyset under sengen blinker.</li>
+    <li>Trykk «Søk etter sengen» innen tre minutter.</li>
+  </ol>
+
+  <p class="lb-note">Har du to senger, gjør du dette for én om gangen. En seng
+     som er lagt til kobler seg fritt til siden, uten at dette må gjentas.</p>
+
+  <button id="search" class="lb-btn">Søk etter sengen</button>
+</div>
 
 <script type="application/javascript">
+  try {
+    Homey.setTitle('Sett sengen i paringsmodus');
+  } catch (error) {
+    // Tittelen er pynt; teksten står på egne ben.
+  }
+
   document.getElementById('search').addEventListener('click', () => {
-    Homey.showView('list_devices');
+    Homey.showView('search');
   });
 </script>

@@ -1,0 +1,143 @@
+<!--
+  Steg 4: finn sengen og legg den til.
+
+  Egen visning i stedet for list_devices-malen, fordi malen viser samme tomme
+  skjerm i to situasjoner som krever helt ulik handling: sengen svarte ikke
+  (ta strømbruddet på nytt), eller sengen er allerede lagt til (gjør ingenting).
+
+  Mekanikken følger Geberit-appen, som er verifisert på denne Homeyen:
+  callback-stil på Homey.emit og egen CSS. Homey injiserer homey.js selv.
+
+  Filtreringen av allerede parede senger gjøres i driveren — den er malens
+  jobb, og den gjør den ikke for oss her.
+-->
+<style>
+  .lb { padding: 0 24px; line-height: 1.5; }
+  .lb h2 { margin: 0 0 10px; }
+  .lb .bed { display: block; width: 100%; margin-top: 10px; padding: 12px; font-size: 1em;
+             text-align: left; border-radius: 6px; cursor: pointer; border: 1px solid #004B76;
+             background: #004B76; color: #fff; }
+  .lb .bed small { display: block; opacity: 0.8; font-size: 0.82em; margin-top: 2px; }
+  .lb .retry { display: block; width: 100%; margin-top: 16px; padding: 10px; font-size: 0.95em;
+               border-radius: 6px; cursor: pointer; border: 1px solid rgba(128,128,128,0.4);
+               background: transparent; color: inherit; }
+  .lb button[disabled] { opacity: 0.5; cursor: default; }
+  .lb #note { margin-top: 14px; font-size: 0.88em; line-height: 1.45; }
+  .lb #note.bad { color: #c0392b; }
+  .lb #note.ok { color: #1a8a3c; }
+</style>
+
+<div class="lb">
+  <p id="subtitle">Dette tar rundt et halvt minutt. Sengen må være i paringsmodus.</p>
+  <div id="list"></div>
+  <div id="note"></div>
+  <button id="retry" class="retry" style="display:none">Søk på nytt</button>
+</div>
+
+<script type="application/javascript">
+  const titleEl = { set textContent(text) { try { Homey.setTitle(text); } catch (error) { /* pynt */ } } };
+  const subtitleEl = document.getElementById('subtitle');
+  const listEl = document.getElementById('list');
+  const noteEl = document.getElementById('note');
+  const retryEl = document.getElementById('retry');
+
+  function note(text, cls) {
+    noteEl.textContent = text || '';
+    noteEl.className = cls || '';
+  }
+
+  function add(device) {
+    listEl.innerHTML = '';
+    retryEl.style.display = 'none';
+    titleEl.textContent = 'Legger til';
+    subtitleEl.textContent = device.name;
+    note('');
+
+    Homey.createDevice(device, (error) => {
+      if (error) {
+        note('Kunne ikke legge til sengen: ' + (error.message || error), 'bad');
+        retryEl.style.display = '';
+        return;
+      }
+      Homey.done();
+    });
+  }
+
+  function render(result) {
+    const devices = (result && result.devices) || [];
+    const seen = (result && result.seen) || 0;
+    const known = (result && result.known) || 0;
+
+    listEl.innerHTML = '';
+    retryEl.style.display = '';
+
+    if (devices.length) {
+      titleEl.textContent = devices.length === 1 ? 'Fant én seng' : ('Fant ' + devices.length + ' senger');
+      subtitleEl.textContent = 'Trykk på sengen du vil legge til.';
+
+      for (const device of devices) {
+        const button = document.createElement('button');
+        button.className = 'bed';
+        button.innerHTML = '';
+        button.appendChild(document.createTextNode(device.name));
+        const small = document.createElement('small');
+        small.textContent = (device.store && device.store.mac) || '';
+        button.appendChild(small);
+        button.addEventListener('click', () => add(device));
+        listEl.appendChild(button);
+      }
+
+      if (known) {
+        note(known === 1
+          ? 'Én seng til svarte, men den er lagt til fra før.'
+          : (known + ' senger til svarte, men de er lagt til fra før.'), 'ok');
+      }
+      return;
+    }
+
+    // Ingen NYE senger. De to årsakene krever helt ulik handling, så de skal
+    // ikke se like ut.
+    if (known) {
+      titleEl.textContent = 'Sengen er allerede lagt til';
+      subtitleEl.textContent = known === 1
+        ? 'Fant én seng, og den finnes som enhet fra før.'
+        : ('Fant ' + known + ' senger, og de finnes som enheter fra før.');
+      note('Du trenger ikke gjøre noe mer. Skal du legge til en annen seng, '
+        + 'ta strømbruddet på den og søk på nytt.', 'ok');
+      return;
+    }
+
+    titleEl.textContent = 'Fant ingen seng';
+    subtitleEl.textContent = seen
+      ? 'Sengen svarte, men kunne ikke leses.'
+      : 'Ingen seng svarte på søket.';
+    note('Sengen svarer bare de tre første minuttene etter at strømmen kom '
+      + 'tilbake. Gikk det for lang tid, trekk ut støpselet, vent to hele '
+      + 'minutter, sett det inn igjen og søk på nytt. Sjekk også at ESP32-en '
+      + 'står nær sengen.', 'bad');
+  }
+
+  function search() {
+    retryEl.style.display = 'none';
+    retryEl.disabled = true;
+    listEl.innerHTML = '';
+    titleEl.textContent = 'Søker etter sengen';
+    subtitleEl.textContent = 'Dette tar rundt et halvt minutt.';
+    note('');
+
+    Homey.emit('search_beds', null, (error, result) => {
+      retryEl.disabled = false;
+      if (error) {
+        titleEl.textContent = 'Søket feilet';
+        subtitleEl.textContent = '';
+        note(String(error.message || error), 'bad');
+        retryEl.style.display = '';
+        return;
+      }
+      render(result);
+    });
+  }
+
+  retryEl.addEventListener('click', search);
+  search();
+</script>

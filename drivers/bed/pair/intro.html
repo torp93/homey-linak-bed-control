@@ -1,50 +1,51 @@
 <!--
   Steg 1: forutsetningene, samlet før brukeren blir bedt om noe som helst.
 
-  Butikkteksten får ikke inneholde oppsettsanvisninger eller lenker (Homeys
-  retningslinjer), så dette er første og eneste stedet en ny bruker får vite at
-  det kreves maskinvare i det hele tatt.
+  Å søke før proxy-adressen er satt ender alltid i «fant ingen seng», og
+  ingenting på den skjermen forklarer hvorfor. Butikkteksten får ikke inneholde
+  oppsettsanvisninger eller lenker (Homeys retningslinjer), så dette er første
+  og eneste stedet en ny bruker får vite at det kreves maskinvare i det hele
+  tatt.
 
-  Adressen står som ren tekst, ikke som lenke: paringen kjører i en webvisning
-  uten nettleser rundt, så en <a> ville enten ikke gjort noe eller låst brukeren
-  inne midt i paringen.
+  Ingen <h2> her: Homey tegner tittelen selv i toppteksten, og en overskrift i
+  innholdet i tillegg gir «Før du starter» to ganger på skjermen.
+
+  Homey injiserer homey.js selv — ikke legg den inn her.
 -->
-<h1 class="homey-title">Før du starter</h1>
-<p class="homey-subtitle">
-  Homey snakker ikke direkte med sengen. Den går via en ESP32 som kjører
-  ESPHome som Bluetooth-proxy, så noen ting må være på plass.
-</p>
+<style>
+  .lb-intro { padding: 0 24px; line-height: 1.5; }
+  .lb-intro ol { padding-left: 20px; }
+  .lb-intro li { margin-bottom: 10px; }
+  .lb-note { opacity: 0.7; font-size: 0.9em; margin-top: 18px; }
+</style>
 
-<ol class="homey-text">
-  <li>
-    Flash en ESP32 med ESPHome. En komplett, testet konfigurasjon ligger på
-    github.com/torp93/homey-linak-bed-control, sammen med resten av
-    oppsettsveiledningen.
-  </li>
-  <li>
-    Før du flasher må du legge inn WiFi-navn og passord i ESPHome sin
-    secrets.yaml som wifi_ssid og wifi_password, og sette passordet for
-    reserve-aksesspunktet som fallback_password. Kortet har verken skjerm
-    eller knapper, så uten dette kommer det aldri på nett.
-  </li>
-  <li>
-    Konfigurasjonen må ha bluetooth_proxy slått på. Den som følger med har det
-    allerede.
-  </li>
-  <li>
-    Plasser ESP32-en nær sengen med fri sikt. Sengen sender svakt, og
-    styringsboksen sitter under rammen — sikt betyr mer enn avstand.
-  </li>
-  <li>
-    Skriv inn adressen til ESP32-en i neste steg, og bruk fast IP eller
-    DHCP-reservasjon så den ikke flytter seg.
-  </li>
-  <li>
-    Sengen godtar bare én styreenhet om gangen. Mens Homey har tilkoblingen
-    åpen, svarer ikke fjernkontrollen.
-  </li>
-</ol>
+<div class="lb-intro">
+  <p>Homey snakker ikke direkte med sengen. Den går via en ESP32 som kjører
+     ESPHome som Bluetooth-proxy, så noen ting må være på plass.</p>
+  <ol>
+    <li>Flash en ESP32 med ESPHome. En komplett, testet konfigurasjon ligger på
+        GitHub: github.com/torp93/homey-linak-bed-control, som
+        esphome/linak-bed-proxy.yaml.</li>
+    <li>Før du flasher må du legge inn WiFi-navn og passord i ESPHome sin
+        secrets.yaml som wifi_ssid og wifi_password. Kortet har verken skjerm
+        eller knapper, så uten dette kommer det aldri på nett.</li>
+    <li>Plasser ESP32-en noen få meter fra sengen, med minst mulig betong og
+        metall imellom. Sengen sender svakt, og styringsboksen sitter under
+        rammen.</li>
+    <li>Neste skjerm spør etter adressen til ESP32-en. Bruk fast IP eller
+        DHCP-reservasjon så den ikke flytter seg.</li>
+    <li>Sengen godtar bare én styreenhet om gangen. Mens Homey har tilkoblingen
+        åpen, svarer ikke fjernkontrollen.</li>
+  </ol>
+  <p class="lb-note">Når det er gjort, kan du gå videre, så leter Homey etter
+     sengen.</p>
+</div>
 
-<p class="homey-form-help">
-  Når det er gjort, trykk <strong>Neste</strong>.
-</p>
+<script type="application/javascript">
+  try {
+    Homey.setTitle('Før du starter');
+  } catch (error) {
+    // Tittelen er pynt; teksten over står på egne ben. Neste-knappen kommer
+    // fra navigation.next i app.json uansett.
+  }
+</script>

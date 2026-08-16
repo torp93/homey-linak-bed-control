@@ -28,7 +28,6 @@
 </style>
 
 <div class="lb">
-  <h2>Bluetooth-proxyen</h2>
   <p>Skriv inn adressen til ESP32-en som kjører ESPHome. Bruk fast IP eller
      DHCP-reservasjon, så den ikke flytter seg senere.</p>
 
@@ -47,6 +46,8 @@
 </div>
 
 <script type="application/javascript">
+  try { Homey.setTitle('Bluetooth-proxyen'); } catch (error) { /* pynt */ }
+
   const hostEl = document.getElementById('host');
   const portEl = document.getElementById('port');
   const resultEl = document.getElementById('result');

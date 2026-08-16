@@ -30,8 +30,8 @@
     "en": "Pairing now explains that the app needs an ESP32 Bluetooth proxy, and where to find the setup guide.",
     "no": "Paringen forklarer nå at appen trenger en ESP32 Bluetooth-proxy, og hvor oppsettsveiledningen finnes."
   },
-  "1.0.10": {
-    "en": "Pairing now walks you through what the app needs: the Bluetooth proxy and its address, and the two-minute power cut the bed requires. Flow cards work with \"Both beds\" too.",
-    "no": "Paringen går nå gjennom det appen trenger: Bluetooth-proxyen og adressen dens, og det to minutter lange strømbruddet sengen krever. Flow-kortene virker også med «Begge senger»."
+  "1.0.11": {
+    "en": "Pairing now walks you through what the app needs, and says whether a bed was found, already added, or did not answer. Flow cards work with \"Both beds\" too.",
+    "no": "Paringen går nå gjennom det appen trenger, og sier om sengen ble funnet, allerede er lagt til, eller ikke svarte. Flow-kortene virker også med «Begge senger»."
   }
 }
