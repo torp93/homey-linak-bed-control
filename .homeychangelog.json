@@ -37,5 +37,9 @@
   "1.0.12": {
     "en": "New images: a real bedroom for the app, one bed for the bed device and two beds for \"Both beds\".",
     "no": "Nye bilder: et ekte soverom for appen, én seng for sengeenheten og to senger for «Begge senger»."
+  },
+  "1.0.13": {
+    "en": "The supported devices now show the LINAK actuator: one for a single bed, two for \"Both beds\".",
+    "no": "Enhetene viser nå LINAK-motoren: én for én seng, to for «Begge senger»."
   }
 }
