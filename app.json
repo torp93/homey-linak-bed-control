@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
