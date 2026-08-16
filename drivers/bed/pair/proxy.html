@@ -8,10 +8,23 @@
   Ingen homey.js her og ingen onHomeyReady — Homey injiserer Homey-objektet selv
   i paringsvisninger, og å laste skriptet på nytt gir en visning som henger.
 -->
-<h1 class="homey-title" data-i18n="pair.proxy.title">Bluetooth-proxyen</h1>
+<h1 class="homey-title">Bluetooth-proxyen</h1>
 <p class="homey-subtitle">
   Appen snakker med sengen gjennom en ESP32 som kjører ESPHome. Skriv inn
   adressen dens her.
+</p>
+
+<!--
+  Butikkteksten får ikke inneholde oppsettsanvisninger eller lenker (Homeys
+  retningslinjer), så dette er eneste stedet en ny bruker får vite at det
+  kreves maskinvare i det hele tatt.
+-->
+<p class="homey-text" id="intro">
+  Har du ikke satt opp en ennå: en ESP32 til under hundrelappen holder. Den
+  flashes med ESPHome, konfigurasjonen må ha <strong>bluetooth_proxy</strong>
+  slått på, og kortet plasseres nær sengen. Ferdig oppsett og en testet
+  konfigurasjon ligger i prosjektets dokumentasjon på GitHub —
+  <strong>torp93/homey-linak-bed-control</strong>.
 </p>
 
 <div class="homey-form-group">

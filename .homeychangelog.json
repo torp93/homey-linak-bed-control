@@ -25,5 +25,9 @@
   "1.0.6": {
     "en": "Setup documentation now covers flashing the Bluetooth proxy and the WiFi details it needs.",
     "no": "Oppsettsdokumentasjonen dekker nå flashing av Bluetooth-proxyen og WiFi-detaljene den trenger."
+  },
+  "1.0.7": {
+    "en": "Pairing now explains that the app needs an ESP32 Bluetooth proxy, and where to find the setup guide.",
+    "no": "Paringen forklarer nå at appen trenger en ESP32 Bluetooth-proxy, og hvor oppsettsveiledningen finnes."
   }
 }
