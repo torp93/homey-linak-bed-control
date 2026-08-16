@@ -33,5 +33,9 @@
   "1.0.11": {
     "en": "Pairing now walks you through what the app needs, and says whether a bed was found, already added, or did not answer. Flow cards work with \"Both beds\" too.",
     "no": "Paringen går nå gjennom det appen trenger, og sier om sengen ble funnet, allerede er lagt til, eller ikke svarte. Flow-kortene virker også med «Begge senger»."
+  },
+  "1.0.12": {
+    "en": "New images: a real bedroom for the app, one bed for the bed device and two beds for \"Both beds\".",
+    "no": "Nye bilder: et ekte soverom for appen, én seng for sengeenheten og to senger for «Begge senger»."
   }
 }
