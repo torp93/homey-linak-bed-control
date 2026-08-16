@@ -18,28 +18,10 @@
   får med seg senger du legger til senere.
 </p>
 
-<p id="status" class="homey-form-help"></p>
+<button id="add" class="lb-btn" style="display:block;width:calc(100% - 48px);margin:18px 24px 0;padding:10px;font-size:0.95em;border-radius:6px;cursor:pointer;border:1px solid #004B76;background:#004B76;color:#fff">Fortsett</button>
 
-<button id="add" class="homey-button-primary-full">Legg til</button>
-
-<script type="text/javascript">
-  const button = document.getElementById('add');
-  const status = document.getElementById('status');
-
-  button.addEventListener('click', () => {
-    button.disabled = true;
-    status.style.color = '';
-    status.textContent = 'Legger til …';
-
-    // Eget hendelsesnavn — 'list_devices' er reservert for malen og virker
-    // ikke fra en egen visning. Gir én enhet, så det er ikke noe å velge mellom.
-    Homey.emit('make_group')
-      .then((device) => Homey.createDevice(device))
-      .then(() => Homey.done())
-      .catch((error) => {
-        status.style.color = '#e2574c';
-        status.textContent = error.message || 'Kunne ikke legge til enheten.';
-        button.disabled = false;
-      });
+<script type="application/javascript">
+  document.getElementById('add').addEventListener('click', () => {
+    Homey.showView('list_devices');
   });
 </script>

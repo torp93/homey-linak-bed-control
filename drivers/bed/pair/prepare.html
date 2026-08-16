@@ -27,10 +27,16 @@
   kobler seg fritt til siden, uten at dette må gjentas.
 </p>
 
-<button id="search" class="homey-button-primary-full">Søk etter sengen</button>
+<style>
+  .lb-btn { display: block; width: calc(100% - 48px); margin: 18px 24px 0; padding: 10px;
+            font-size: 0.95em; border-radius: 6px; cursor: pointer; border: 1px solid #004B76;
+            background: #004B76; color: #fff; }
+</style>
 
-<script type="text/javascript">
+<button id="search" class="lb-btn">Søk etter sengen</button>
+
+<script type="application/javascript">
   document.getElementById('search').addEventListener('click', () => {
-    Homey.showView('search');
+    Homey.showView('list_devices');
   });
 </script>
