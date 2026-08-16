@@ -21,5 +21,9 @@
   "1.0.5": {
     "en": "Fixes pairing, which failed with an error instead of searching for the bed.",
     "no": "Retter paringen, som feilet med en feilmelding i stedet for å søke etter sengen."
+  },
+  "1.0.6": {
+    "en": "Setup documentation now covers flashing the Bluetooth proxy and the WiFi details it needs.",
+    "no": "Oppsettsdokumentasjonen dekker nå flashing av Bluetooth-proxyen og WiFi-detaljene den trenger."
   }
 }
