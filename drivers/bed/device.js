@@ -60,6 +60,14 @@ class BedDevice extends Homey.Device {
     this.log(`LINAK-seng klar — ${this._mac}`);
   }
 
+  // onDeleted er hendelsen Homey gir når BRUKEREN sletter enheten. Uten den
+  // fortsetter en bevegelse som var i gang å kjøre i proxyen — den kjenner
+  // ingen Homey-enheter og ville stoppet først på sikkerhetsgrensen.
+  async onDeleted() {
+    this.homey.app.forgetBed(this._mac);
+    this.log(`Seng slettet — ${this._mac} sluppet`);
+  }
+
   _proxy() {
     return this.homey.app.getProxy();
   }

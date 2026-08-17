@@ -1,0 +1,18 @@
+# Hva som IKKE skal være med i pakken som installeres på Homey.
+#
+# Homey Pro kjører med lite ledig RAM, og alt herfra ble tidligere pakket med:
+# skjermbildene alene er ~290 kB som ingen på enheten noen gang åpner.
+#
+# Ikke ta med grafikk under assets/ eller drivers/*/assets/ her — Homey og App
+# Store trenger de filene.
+
+# Tester kjøres på utviklermaskinen, aldri på Homey.
+test/
+
+# Dokumentasjon og skjermbilder hører hjemme på GitHub. LICENSE og
+# THIRD_PARTY_NOTICES.md blir med — de hører til det som distribueres.
+docs/
+README.md
+
+# ESPHome-konfigurasjonen beholdes bevisst: den er en del av oppsettet appen
+# beskriver, og paringsvisningen viser til den ved navn.

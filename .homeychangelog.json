@@ -41,5 +41,9 @@
   "1.0.13": {
     "en": "The supported devices now show the LINAK actuator: one for a single bed, two for \"Both beds\".",
     "no": "Enhetene viser nå LINAK-motoren: én for én seng, to for «Begge senger»."
+  },
+  "1.0.14": {
+    "en": "Pairing is now in English as well as Norwegian, error messages are readable, and the Bluetooth proxy address is always your own.",
+    "no": "Paringen finnes nå på engelsk i tillegg til norsk, feilmeldingene er til å forstå, og proxy-adressen er alltid din egen."
   }
 }

@@ -8,7 +8,9 @@
   tatt.
 
   Ingen <h2> her: Homey tegner tittelen selv i toppteksten, og en overskrift i
-  innholdet i tillegg gir «Før du starter» to ganger på skjermen.
+  innholdet i tillegg gir tittelen to ganger på skjermen.
+
+  Engelsk er appens grunnspråk — norsk vises kun når Homey står på norsk.
 
   Homey injiserer homey.js selv — ikke legg den inn her.
 -->
@@ -20,32 +22,82 @@
 </style>
 
 <div class="lb-intro">
-  <p>Homey snakker ikke direkte med sengen. Den går via en ESP32 som kjører
-     ESPHome som Bluetooth-proxy, så noen ting må være på plass.</p>
+  <p id="lead"></p>
   <ol>
-    <li>Flash en ESP32 med ESPHome. En komplett, testet konfigurasjon ligger på
-        GitHub: github.com/torp93/homey-linak-bed-control, som
-        esphome/linak-bed-proxy.yaml.</li>
-    <li>Før du flasher må du legge inn WiFi-navn og passord i ESPHome sin
-        secrets.yaml som wifi_ssid og wifi_password. Kortet har verken skjerm
-        eller knapper, så uten dette kommer det aldri på nett.</li>
-    <li>Plasser ESP32-en noen få meter fra sengen, med minst mulig betong og
-        metall imellom. Sengen sender svakt, og styringsboksen sitter under
-        rammen.</li>
-    <li>Neste skjerm spør etter adressen til ESP32-en. Bruk fast IP eller
-        DHCP-reservasjon så den ikke flytter seg.</li>
-    <li>Sengen godtar bare én styreenhet om gangen. Mens Homey har tilkoblingen
-        åpen, svarer ikke fjernkontrollen.</li>
+    <li id="s1"></li>
+    <li id="s2"></li>
+    <li id="s3"></li>
+    <li id="s4"></li>
+    <li id="s5"></li>
   </ol>
-  <p class="lb-note">Når det er gjort, kan du gå videre, så leter Homey etter
-     sengen.</p>
+  <p class="lb-note" id="note"></p>
 </div>
 
 <script type="application/javascript">
-  try {
-    Homey.setTitle('Før du starter');
-  } catch (error) {
-    // Tittelen er pynt; teksten over står på egne ben. Neste-knappen kommer
-    // fra navigation.next i app.json uansett.
-  }
+(function () {
+    const STRINGS = {
+      en: {
+        title: 'Before you start',
+        lead: 'Homey does not talk to the bed directly. It goes through an ESP32 running '
+            + 'ESPHome as a Bluetooth proxy, so a few things need to be in place.',
+        s1: 'Flash an ESP32 with ESPHome. A complete, tested configuration is on GitHub: '
+          + 'github.com/torp93/homey-linak-bed-control, as esphome/linak-bed-proxy.yaml.',
+        s2: 'Before flashing, put your WiFi name and password into ESPHome’s secrets.yaml '
+          + 'as wifi_ssid and wifi_password. The board has no screen and no buttons, so '
+          + 'without them it will never get online.',
+        s3: 'Place the ESP32 a few metres from the bed, with as little concrete and metal '
+          + 'in between as possible. The bed transmits weakly, and its control box sits '
+          + 'under the frame.',
+        s4: 'The next screen asks for the address of the ESP32. Use a fixed IP or a DHCP '
+          + 'reservation so it does not move.',
+        s5: 'The bed accepts only one controller at a time. While Homey holds the '
+          + 'connection open, the remote will not respond.',
+        note: 'Once that is done you can continue, and Homey will look for the bed.',
+      },
+      no: {
+        title: 'Før du starter',
+        lead: 'Homey snakker ikke direkte med sengen. Den går via en ESP32 som kjører '
+            + 'ESPHome som Bluetooth-proxy, så noen ting må være på plass.',
+        s1: 'Flash en ESP32 med ESPHome. En komplett, testet konfigurasjon ligger på '
+          + 'GitHub: github.com/torp93/homey-linak-bed-control, som '
+          + 'esphome/linak-bed-proxy.yaml.',
+        s2: 'Før du flasher må du legge inn WiFi-navn og passord i ESPHome sin '
+          + 'secrets.yaml som wifi_ssid og wifi_password. Kortet har verken skjerm '
+          + 'eller knapper, så uten dette kommer det aldri på nett.',
+        s3: 'Plasser ESP32-en noen få meter fra sengen, med minst mulig betong og '
+          + 'metall imellom. Sengen sender svakt, og styringsboksen sitter under '
+          + 'rammen.',
+        s4: 'Neste skjerm spør etter adressen til ESP32-en. Bruk fast IP eller '
+          + 'DHCP-reservasjon så den ikke flytter seg.',
+        s5: 'Sengen godtar bare én styreenhet om gangen. Mens Homey har tilkoblingen '
+          + 'åpen, svarer ikke fjernkontrollen.',
+        note: 'Når det er gjort, kan du gå videre, så leter Homey etter sengen.',
+      },
+    };
+
+    // getLanguage finnes ikke garantert i paringsvisninger, så nettleserspråket
+    // er reserven. Engelsk er grunnspråket når ingen av delene sier «no».
+    function pickLanguage() {
+      try {
+        if (typeof Homey !== 'undefined' && typeof Homey.getLanguage === 'function') {
+          if (Homey.getLanguage() === 'no') return STRINGS.no;
+        }
+      } catch (error) { /* faller gjennom til nettleserspråket */ }
+      const tag = String((navigator && navigator.language) || '').toLowerCase();
+      return (tag.indexOf('nb') === 0 || tag.indexOf('nn') === 0 || tag.indexOf('no') === 0)
+        ? STRINGS.no : STRINGS.en;
+    }
+
+    const T = pickLanguage();
+    for (const key of ['lead', 's1', 's2', 's3', 's4', 's5', 'note']) {
+      document.getElementById(key).textContent = T[key];
+    }
+
+    try {
+      Homey.setTitle(T.title);
+    } catch (error) {
+      // Tittelen er pynt; teksten over står på egne ben. Neste-knappen kommer
+      // fra navigation.next i app.json uansett.
+    }
+})();
 </script>

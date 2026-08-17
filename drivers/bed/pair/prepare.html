@@ -7,6 +7,7 @@
   og tror appen er ødelagt.
 
   Ingen overskrift i innholdet: Homey tegner tittelen selv i toppteksten.
+  Engelsk er appens grunnspråk — norsk vises kun når Homey står på norsk.
 -->
 <style>
   .lb-prep { padding: 0 24px; line-height: 1.5; }
@@ -19,31 +20,74 @@
 </style>
 
 <div class="lb-prep">
-  <p>Sengen slipper bare inn en ny styreenhet rett etter at den har vært uten
-     strøm en stund. Dette gjøres én gang per seng.</p>
+  <p id="lead"></p>
 
   <ol>
-    <li>Trekk ut støpselet til sengen.</li>
-    <li><strong>Vent to hele minutter.</strong> Kortere pauser gjør ingenting i
-        det hele tatt — sengen må rekke å gi helt slipp.</li>
-    <li>Sett støpselet inn igjen. Lyset under sengen blinker.</li>
-    <li>Trykk «Søk etter sengen» innen tre minutter.</li>
+    <li id="s1"></li>
+    <li id="s2"></li>
+    <li id="s3"></li>
+    <li id="s4"></li>
   </ol>
 
-  <p class="lb-note">Har du to senger, gjør du dette for én om gangen. En seng
-     som er lagt til kobler seg fritt til siden, uten at dette må gjentas.</p>
+  <p class="lb-note" id="note"></p>
 
-  <button id="search" class="lb-btn">Søk etter sengen</button>
+  <button id="search" class="lb-btn"></button>
 </div>
 
 <script type="application/javascript">
-  try {
-    Homey.setTitle('Sett sengen i paringsmodus');
-  } catch (error) {
-    // Tittelen er pynt; teksten står på egne ben.
-  }
+(function () {
+    const STRINGS = {
+      en: {
+        title: 'Put the bed into pairing mode',
+        lead: 'The bed only lets a new controller in right after it has been without power '
+            + 'for a while. This is done once per bed.',
+        s1: 'Unplug the bed.',
+        s2: 'Wait two full minutes. Shorter breaks do nothing at all — the bed has to let go completely.',
+        s3: 'Plug it back in. The light under the bed blinks.',
+        s4: 'Press “Search for the bed” within three minutes.',
+        note: 'With two beds, do one at a time. A bed that has been added connects freely '
+            + 'from then on, without repeating this.',
+        search: 'Search for the bed',
+      },
+      no: {
+        title: 'Sett sengen i paringsmodus',
+        lead: 'Sengen slipper bare inn en ny styreenhet rett etter at den har vært uten '
+            + 'strøm en stund. Dette gjøres én gang per seng.',
+        s1: 'Trekk ut støpselet til sengen.',
+        s2: 'Vent to hele minutter. Kortere pauser gjør ingenting i det hele tatt — sengen må rekke å gi helt slipp.',
+        s3: 'Sett støpselet inn igjen. Lyset under sengen blinker.',
+        s4: 'Trykk «Søk etter sengen» innen tre minutter.',
+        note: 'Har du to senger, gjør du dette for én om gangen. En seng som er lagt til '
+            + 'kobler seg fritt til siden, uten at dette må gjentas.',
+        search: 'Søk etter sengen',
+      },
+    };
 
-  document.getElementById('search').addEventListener('click', () => {
-    Homey.showView('search');
-  });
+    function pickLanguage() {
+      try {
+        if (typeof Homey !== 'undefined' && typeof Homey.getLanguage === 'function') {
+          if (Homey.getLanguage() === 'no') return STRINGS.no;
+        }
+      } catch (error) { /* faller gjennom til nettleserspråket */ }
+      const tag = String((navigator && navigator.language) || '').toLowerCase();
+      return (tag.indexOf('nb') === 0 || tag.indexOf('nn') === 0 || tag.indexOf('no') === 0)
+        ? STRINGS.no : STRINGS.en;
+    }
+
+    const T = pickLanguage();
+    for (const key of ['lead', 's1', 's2', 's3', 's4', 'note']) {
+      document.getElementById(key).textContent = T[key];
+    }
+    document.getElementById('search').textContent = T.search;
+
+    try {
+      Homey.setTitle(T.title);
+    } catch (error) {
+      // Tittelen er pynt; teksten står på egne ben.
+    }
+
+    document.getElementById('search').addEventListener('click', () => {
+      Homey.showView('search');
+    });
+})();
 </script>

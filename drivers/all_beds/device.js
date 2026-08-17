@@ -73,7 +73,9 @@ class AllBedsDevice extends Homey.Device {
   // i stedet for å la første avvisning rive hele kallet.
   async runOnAll(action) {
     const beds = this._beds();
-    if (!beds.length) throw new Error('Ingen senger er lagt til ennå');
+    // Engelsk: feilen vises for brukeren i Flow-kort og på knappen, og engelsk
+    // er appens grunnspråk. Logglinjene under er interne og forblir norske.
+    if (!beds.length) throw new Error('No beds have been added yet');
 
     // Gruppa påstår ikke 'moving': pressMotor løses ved bevegelsesSTART, så
     // gruppa vet ikke når sengene faktisk er ferdige. Sengene viser sin egen

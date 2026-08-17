@@ -8,6 +8,8 @@
   verifisert på denne Homeyen: callback-stil på Homey.emit, egen CSS i stedet
   for homey-*-klassene, og showView til neste steg fra knappen.
 
+  Engelsk er appens grunnspråk — norsk vises kun når Homey står på norsk.
+
   Homey injiserer homey.js selv — ikke legg den inn her.
 -->
 <style>
@@ -28,91 +30,143 @@
 </style>
 
 <div class="lb">
-  <p>Skriv inn adressen til ESP32-en som kjører ESPHome. Bruk fast IP eller
-     DHCP-reservasjon, så den ikke flytter seg senere.</p>
+  <p id="lead"></p>
 
-  <label for="host">Adresse</label>
+  <label for="host" id="hostLabel"></label>
   <input id="host" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="192.168.1.50">
 
-  <label for="port">Port (native API, normalt 6053)</label>
+  <label for="port" id="portLabel"></label>
   <input id="port" type="number" min="1" max="65535" value="6053">
 
   <div class="buttons">
-    <button id="test">Test tilkoblingen</button>
-    <button id="next" class="primary">Lagre og fortsett</button>
+    <button id="test"></button>
+    <button id="next" class="primary"></button>
   </div>
 
   <div id="result"></div>
 </div>
 
 <script type="application/javascript">
-  try { Homey.setTitle('Bluetooth-proxyen'); } catch (error) { /* pynt */ }
+(function () {
+    const STRINGS = {
+      en: {
+        title: 'The Bluetooth proxy',
+        lead: 'Enter the address of the ESP32 running ESPHome. Use a fixed IP or a DHCP '
+            + 'reservation so it does not move later.',
+        hostLabel: 'Address',
+        portLabel: 'Port (native API, normally 6053)',
+        test: 'Test the connection',
+        next: 'Save and continue',
+        testing: 'Contacting the proxy…',
+        invalidHost: 'Enter a valid IP address or hostname.',
+        invalidPort: 'Port must be between 1 and 65535.',
+        failed: 'Could not reach it: ',
+        noProxy: 'Connected, but this device does not have bluetooth_proxy enabled.',
+        untested: 'Saved without a successful test — the search may find nothing.',
+      },
+      no: {
+        title: 'Bluetooth-proxyen',
+        lead: 'Skriv inn adressen til ESP32-en som kjører ESPHome. Bruk fast IP eller '
+            + 'DHCP-reservasjon, så den ikke flytter seg senere.',
+        hostLabel: 'Adresse',
+        portLabel: 'Port (native API, normalt 6053)',
+        test: 'Test tilkoblingen',
+        next: 'Lagre og fortsett',
+        testing: 'Kobler til proxyen …',
+        invalidHost: 'Skriv inn en gyldig IP-adresse eller vertsnavn.',
+        invalidPort: 'Porten må være mellom 1 og 65535.',
+        failed: 'Fikk ikke kontakt: ',
+        noProxy: 'Tilkoblet, men denne enheten har ikke bluetooth_proxy slått på.',
+        untested: 'Lagret uten en vellykket test — søket finner kanskje ingenting.',
+      },
+    };
 
-  const hostEl = document.getElementById('host');
-  const portEl = document.getElementById('port');
-  const resultEl = document.getElementById('result');
-  const testBtn = document.getElementById('test');
-  const nextBtn = document.getElementById('next');
+    function pickLanguage() {
+      try {
+        if (typeof Homey !== 'undefined' && typeof Homey.getLanguage === 'function') {
+          if (Homey.getLanguage() === 'no') return STRINGS.no;
+        }
+      } catch (error) { /* faller gjennom til nettleserspråket */ }
+      const tag = String((navigator && navigator.language) || '').toLowerCase();
+      return (tag.indexOf('nb') === 0 || tag.indexOf('nn') === 0 || tag.indexOf('no') === 0)
+        ? STRINGS.no : STRINGS.en;
+    }
 
-  function show(text, cls) {
-    resultEl.textContent = text;
-    resultEl.className = cls || '';
-  }
+    const T = pickLanguage();
+    try { Homey.setTitle(T.title); } catch (error) { /* pynt */ }
 
-  Homey.emit('getProxy', null, (error, current) => {
-    if (error || !current) return;
-    if (current.host) hostEl.value = current.host;
-    if (current.port) portEl.value = current.port;
-  });
+    const hostEl = document.getElementById('host');
+    const portEl = document.getElementById('port');
+    const resultEl = document.getElementById('result');
+    const testBtn = document.getElementById('test');
+    const nextBtn = document.getElementById('next');
 
-  function readInputs() {
-    const host = hostEl.value.trim();
-    const port = Number(portEl.value || 6053);
-    if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show('Skriv inn en gyldig IP-adresse eller vertsnavn.', 'bad'); return null; }
-    if (!Number.isInteger(port) || port < 1 || port > 65535) { show('Porten må være mellom 1 og 65535.', 'bad'); return null; }
-    return { host, port };
-  }
+    document.getElementById('lead').textContent = T.lead;
+    document.getElementById('hostLabel').textContent = T.hostLabel;
+    document.getElementById('portLabel').textContent = T.portLabel;
+    testBtn.textContent = T.test;
+    nextBtn.textContent = T.next;
 
-  let tested = false;
+    function show(text, cls) {
+      resultEl.textContent = text;
+      resultEl.className = cls || '';
+    }
 
-  testBtn.addEventListener('click', () => {
-    const input = readInputs();
-    if (!input) return;
-    show('Kobler til proxyen …', '');
-    testBtn.disabled = true;
-    Homey.emit('testProxy', input, (error, info) => {
-      testBtn.disabled = false;
-      if (error) {
-        tested = false;
-        show('Fikk ikke kontakt: ' + (error.message || error), 'bad');
-        return;
-      }
-      const lines = [
-        info.name,
-        'ESPHome ' + info.esphomeVersion + '  ·  ' + info.model,
-        info.macAddress,
-      ].join('\n');
-      if (!info.bluetoothProxy) {
-        tested = false;
-        show(lines + '\n\nTilkoblet, men denne enheten har ikke bluetooth_proxy slått på.', 'bad');
-        return;
-      }
-      tested = true;
-      show('✓ ' + lines, 'ok');
+    Homey.emit('getProxy', null, (error, current) => {
+      if (error || !current) return;
+      if (current.host) hostEl.value = current.host;
+      if (current.port) portEl.value = current.port;
     });
-  });
 
-  // Å gå videre uten en grønn test er lov — proxyen kan være i dvale — men
-  // advarselen forklarer en tom sengeliste på forhånd.
-  nextBtn.addEventListener('click', () => {
-    const input = readInputs();
-    if (!input) return;
-    nextBtn.disabled = true;
-    Homey.emit('saveProxy', input, (error) => {
-      nextBtn.disabled = false;
-      if (error) { show(String(error.message || error), 'bad'); return; }
-      if (!tested) show('Lagret uten en vellykket test — søket finner kanskje ingenting.', 'bad');
-      Homey.showView('prepare');
+    function readInputs() {
+      const host = hostEl.value.trim();
+      const port = Number(portEl.value || 6053);
+      if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show(T.invalidHost, 'bad'); return null; }
+      if (!Number.isInteger(port) || port < 1 || port > 65535) { show(T.invalidPort, 'bad'); return null; }
+      return { host, port };
+    }
+
+    let tested = false;
+
+    testBtn.addEventListener('click', () => {
+      const input = readInputs();
+      if (!input) return;
+      show(T.testing, '');
+      testBtn.disabled = true;
+      Homey.emit('testProxy', input, (error, info) => {
+        testBtn.disabled = false;
+        if (error) {
+          tested = false;
+          show(T.failed + (error.message || error), 'bad');
+          return;
+        }
+        const lines = [
+          info.name,
+          'ESPHome ' + info.esphomeVersion + '  ·  ' + info.model,
+          info.macAddress,
+        ].join('\n');
+        if (!info.bluetoothProxy) {
+          tested = false;
+          show(lines + '\n\n' + T.noProxy, 'bad');
+          return;
+        }
+        tested = true;
+        show('✓ ' + lines, 'ok');
+      });
     });
-  });
+
+    // Å gå videre uten en grønn test er lov — proxyen kan være i dvale — men
+    // advarselen forklarer en tom sengeliste på forhånd.
+    nextBtn.addEventListener('click', () => {
+      const input = readInputs();
+      if (!input) return;
+      nextBtn.disabled = true;
+      Homey.emit('saveProxy', input, (error) => {
+        nextBtn.disabled = false;
+        if (error) { show(String(error.message || error), 'bad'); return; }
+        if (!tested) show(T.untested, 'bad');
+        Homey.showView('prepare');
+      });
+    });
+})();
 </script>

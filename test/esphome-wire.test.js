@@ -4,11 +4,70 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  EsphomeApiClient,
   encodeVarint,
   decodeVarint,
   decodeFields,
   parseAdvertisementData,
 } = require('../lib/esphome-api');
+
+// TCP leverer bytes, ikke meldinger. Rammingen under er egen kode, og den er
+// det eneste som står mellom en delt pakke og en kommando som aldri svarer.
+const frame = (type, payload) => Buffer.concat([
+  Buffer.from([0x00]),
+  encodeVarint(payload.length),
+  encodeVarint(type),
+  payload,
+]);
+
+// Klienten kobler ikke til her — _onData mates direkte, som om socketen leverte.
+function fakeClient() {
+  const client = new EsphomeApiClient({ host: '127.0.0.1' });
+  const seen = [];
+  client.on('message', ({ type, fields }) => seen.push({ type, fields }));
+  // PING besvares med _send, som kaster uten socket. Vi pinger ikke i testene.
+  return { client, seen };
+}
+
+test('ramming: én melding delt over flere TCP-biter settes sammen', () => {
+  const { client, seen } = fakeClient();
+  const whole = frame(42, Buffer.from([(1 << 3) | 0, 7]));
+  for (const byte of whole) client._onData(Buffer.from([byte]));
+  assert.equal(seen.length, 1, 'nøyaktig én melding');
+  assert.equal(seen[0].type, 42);
+  assert.equal(seen[0].fields[1], 7n);
+});
+
+test('ramming: flere meldinger i én TCP-bit leses alle sammen', () => {
+  const { client, seen } = fakeClient();
+  client._onData(Buffer.concat([
+    frame(10, Buffer.from([(1 << 3) | 0, 1])),
+    frame(11, Buffer.from([(1 << 3) | 0, 2])),
+    frame(12, Buffer.from([(1 << 3) | 0, 3])),
+  ]));
+  assert.deepEqual(seen.map((m) => m.type), [10, 11, 12]);
+});
+
+test('ramming: halv melding venter på resten i stedet for å bli tolket', () => {
+  const { client, seen } = fakeClient();
+  const whole = frame(20, Buffer.from([(1 << 3) | 0, 9]));
+  client._onData(whole.subarray(0, whole.length - 1));
+  assert.equal(seen.length, 0, 'ingenting sendes videre før rammen er hel');
+  client._onData(whole.subarray(whole.length - 1));
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].fields[1], 9n);
+});
+
+test('ramming: en stor nyttelast delt i to biter tolkes riktig', () => {
+  const { client, seen } = fakeClient();
+  // 300 bytes -> lengden krever to varint-bytes, som også skal tåle å bli delt.
+  const body = Buffer.concat([Buffer.from([(1 << 3) | 2]), encodeVarint(300), Buffer.alloc(300, 0x41)]);
+  const whole = frame(30, body);
+  client._onData(whole.subarray(0, 2));
+  client._onData(whole.subarray(2));
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].fields[1].length, 300);
+});
 
 // Wire-primitivene tolker bytes fra nettverket — en stille regresjon her gir
 // feil som ser ut som maskinvareproblemer. Derfor testes de eksplisitt.
@@ -54,6 +113,43 @@ test('gjentatte felter samles i array', () => {
   const fields = decodeFields(Buffer.concat([item('ab'), item('cd'), item('ef')]));
   assert.ok(Array.isArray(fields[1]));
   assert.deepEqual(fields[1].map((b) => b.toString('utf8')), ['ab', 'cd', 'ef']);
+});
+
+// TCP er en bytestrøm. En ramme kan komme avkuttet, og et lengdefelt kan lyve.
+// Ingen av delene skal kaste ut av dekoderen — da ville en enkelt rar pakke fra
+// proxyen tatt ned kommandoen som ventet på svar.
+
+test('decodeFields stopper pent på avkuttet fixed32', () => {
+  // Felt 3, wire 5, men bare to av fire bytes kom med.
+  const buf = Buffer.from([(1 << 3) | 0, 5, (3 << 3) | 5, 0x2a, 0x00]);
+  const fields = decodeFields(buf);
+  assert.equal(fields[1], 5n, 'feltet før det avkuttede skal være med');
+  assert.equal(fields[3], undefined, 'det avkuttede feltet skal ikke dukke opp');
+});
+
+test('decodeFields stopper pent på avkuttet fixed64', () => {
+  const buf = Buffer.from([(1 << 3) | 0, 7, (2 << 3) | 1, 0x01, 0x02, 0x03]);
+  const fields = decodeFields(buf);
+  assert.equal(fields[1], 7n);
+  assert.equal(fields[2], undefined);
+});
+
+test('decodeFields godtar ikke et lengdefelt som peker forbi bufferet', () => {
+  // Felt 2 lover 200 bytes, men bufferet har tre. Uten grensesjekk ble en
+  // kortere buffer levert som om den var hel.
+  const buf = Buffer.concat([
+    Buffer.from([(1 << 3) | 0, 9]),
+    Buffer.from([(2 << 3) | 2, 200]), Buffer.from('abc'),
+  ]);
+  const fields = decodeFields(buf);
+  assert.equal(fields[1], 9n);
+  assert.equal(fields[2], undefined);
+});
+
+test('decodeFields kaster ikke på vilkårlig søppel', () => {
+  for (let byte = 0; byte < 256; byte++) {
+    assert.doesNotThrow(() => decodeFields(Buffer.from([byte, byte, byte])));
+  }
 });
 
 test('parseAdvertisementData leser navn, 16-bits og 128-bits tjenester', () => {

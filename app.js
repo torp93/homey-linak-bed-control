@@ -20,7 +20,7 @@ class LinakBedApp extends Homey.App {
     });
 
     const { host, port, source } = resolveProxyConfig(this.homey.settings);
-    this.log(`LINAK Bed v${this.manifest.version} initialized — proxy ${host}:${port} (${source})`);
+    this.log(`LINAK Bed v${this.manifest.version} initialized — proxy ${host || '(not set)'}:${port} (${source})`);
   }
 
   // All BLE går gjennom ESPHome-proxyen, ikke Homeys egen radio. Homey Pro står
@@ -28,6 +28,11 @@ class LinakBedApp extends Homey.App {
   getProxy() {
     if (!this._proxy) {
       const { host, port } = resolveProxyConfig(this.homey.settings);
+      // Fersk installasjon uten lagret adresse. Uten denne beskjeden ville
+      // brukeren fått «EsphomeApiClient krever host» ut av et Flow-kort.
+      if (!host) {
+        throw new Error('No Bluetooth proxy address is set. Open the app settings and enter the address of the ESP32 running ESPHome.');
+      }
       this._proxy = new BedProxy({
         host,
         port,
@@ -43,8 +48,8 @@ class LinakBedApp extends Homey.App {
   // Ligger her og ikke i api.js fordi både innstillingssiden og paringen bruker
   // den; en seng som pares skal ikke kunne godta en proxy innstillingene avviser.
   async testProxyConnection(host, port = DEFAULT_PORT) {
-    if (!isValidHost(host)) throw new Error('Ugyldig adresse');
-    if (!isValidPort(port)) throw new Error('Ugyldig port');
+    if (!isValidHost(host)) throw new Error('Invalid address');
+    if (!isValidPort(port)) throw new Error('Invalid port');
 
     const client = new EsphomeApiClient({
       host: host.trim(),
@@ -73,6 +78,13 @@ class LinakBedApp extends Homey.App {
     } finally {
       await client.close().catch(() => {});
     }
+  }
+
+  // Kalles når en seng slettes. Bruker den EKSISTERENDE klienten — finnes det
+  // ingen, er det heller ingenting i gang som må stoppes, og å opprette en her
+  // ville kastet på en fersk installasjon uten adresse.
+  forgetBed(mac) {
+    if (this._proxy) this._proxy.forget(mac);
   }
 
   resetProxy() {

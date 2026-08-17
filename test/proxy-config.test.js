@@ -13,11 +13,14 @@ const {
 
 const settingsFrom = (values) => ({ get: (key) => values[key] });
 
-test('faller tilbake til proxyens faste IP når ingenting er lagret', () => {
+test('ingen vert er satt før brukeren oppgir en', () => {
+  // Det MÅ ikke ligge en innebygd IP her: den ville pekt hver installasjon mot
+  // en tilfeldig maskin på brukerens eget nett.
   const config = resolveProxyConfig(settingsFrom({}));
-  assert.equal(config.host, DEFAULT_HOST);
+  assert.equal(config.host, '');
+  assert.equal(DEFAULT_HOST, '');
   assert.equal(config.port, DEFAULT_PORT);
-  assert.equal(config.source, 'fallback');
+  assert.equal(config.source, 'unset');
 });
 
 test('appinnstillinger overstyrer fallbacken', () => {
@@ -48,7 +51,7 @@ test('ugyldig port ignoreres', () => {
 test('resolveProxyConfig tåler å bli kalt uten innstillinger', () => {
   assert.equal(resolveProxyConfig(undefined).host, DEFAULT_HOST);
   assert.equal(resolveProxyConfig(null).port, DEFAULT_PORT);
-  assert.equal(resolveProxyConfig({}).source, 'fallback');
+  assert.equal(resolveProxyConfig({}).source, 'unset');
 });
 
 test('validatorene er strenge om formatet', () => {

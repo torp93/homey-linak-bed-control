@@ -22,8 +22,9 @@ class BedDriver extends Homey.Driver {
     session.setHandler('saveProxy', async ({ host, port }) => {
       const address = String(host || '').trim();
       const number = Number(port);
-      if (!isValidHost(address)) throw new Error('Adressen ser ikke gyldig ut.');
-      if (!isValidPort(number)) throw new Error('Porten ser ikke gyldig ut.');
+      // Engelsk: vises ordrett i paringsvisningen, og engelsk er grunnspråket.
+      if (!isValidHost(address)) throw new Error('That address does not look valid.');
+      if (!isValidPort(number)) throw new Error('That port does not look valid.');
       // Å skrive disse to innstillingene får app.js til å kaste den bufrede
       // klienten, så skanningen som følger går til adressen som nettopp ble satt.
       await this.homey.settings.set(SETTING_HOST, address);

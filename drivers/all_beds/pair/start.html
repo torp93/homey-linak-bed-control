@@ -6,22 +6,63 @@
   Egen visning, IKKE list_devices/add_devices-malene: malene virker bare når de
   er de første visningene i paringen, og feiler med «null is not an object
   (evaluating 'devices.length')» når man kommer til dem herfra.
+
+  Engelsk er appens grunnspråk — norsk vises kun når Homey står på norsk.
 -->
-<h1 class="homey-title">Begge senger</h1>
-<p class="homey-subtitle">
-  Denne enheten sender hver kommando til alle sengene du har lagt til, samtidig.
-  Den er ment for en dobbeltseng som består av to separate rammer.
-</p>
+<style>
+  .lb-group { padding: 0 24px; line-height: 1.5; }
+  .lb-btn { display: block; width: 100%; margin-top: 18px; padding: 10px; font-size: 0.95em;
+            border-radius: 6px; cursor: pointer; border: 1px solid #004B76;
+            background: #004B76; color: #fff; }
+</style>
 
-<p class="homey-text">
-  Legg til sengene hver for seg først. Denne enheten finner dem av seg selv, og
-  får med seg senger du legger til senere.
-</p>
-
-<button id="add" class="lb-btn" style="display:block;width:calc(100% - 48px);margin:18px 24px 0;padding:10px;font-size:0.95em;border-radius:6px;cursor:pointer;border:1px solid #004B76;background:#004B76;color:#fff">Fortsett</button>
+<div class="lb-group">
+  <p id="lead"></p>
+  <p id="detail"></p>
+  <button id="add" class="lb-btn"></button>
+</div>
 
 <script type="application/javascript">
-  document.getElementById('add').addEventListener('click', () => {
-    Homey.showView('list_devices');
-  });
+(function () {
+    const STRINGS = {
+      en: {
+        title: 'Both beds',
+        lead: 'This device sends every command to all the beds you have added, at the same '
+            + 'time. It is meant for a double bed made up of two separate frames.',
+        detail: 'Add the beds one by one first. This device finds them on its own, and picks '
+              + 'up beds you add later.',
+        add: 'Continue',
+      },
+      no: {
+        title: 'Begge senger',
+        lead: 'Denne enheten sender hver kommando til alle sengene du har lagt til, '
+            + 'samtidig. Den er ment for en dobbeltseng som består av to separate rammer.',
+        detail: 'Legg til sengene hver for seg først. Denne enheten finner dem av seg selv, '
+              + 'og får med seg senger du legger til senere.',
+        add: 'Fortsett',
+      },
+    };
+
+    function pickLanguage() {
+      try {
+        if (typeof Homey !== 'undefined' && typeof Homey.getLanguage === 'function') {
+          if (Homey.getLanguage() === 'no') return STRINGS.no;
+        }
+      } catch (error) { /* faller gjennom til nettleserspråket */ }
+      const tag = String((navigator && navigator.language) || '').toLowerCase();
+      return (tag.indexOf('nb') === 0 || tag.indexOf('nn') === 0 || tag.indexOf('no') === 0)
+        ? STRINGS.no : STRINGS.en;
+    }
+
+    const T = pickLanguage();
+    document.getElementById('lead').textContent = T.lead;
+    document.getElementById('detail').textContent = T.detail;
+    document.getElementById('add').textContent = T.add;
+
+    try { Homey.setTitle(T.title); } catch (error) { /* pynt */ }
+
+    document.getElementById('add').addEventListener('click', () => {
+      Homey.showView('list_devices');
+    });
+})();
 </script>
