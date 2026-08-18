@@ -65,5 +65,9 @@
   "1.0.19": {
     "en": "The bed now shows two signals: Bluetooth to the bed and WiFi to the proxy. Each can be measured automatically or on demand.",
     "no": "Sengen viser nå to signaler: Bluetooth til sengen og WiFi til proxyen. Hver av dem kan måles automatisk eller på forespørsel."
+  },
+  "1.0.20": {
+    "en": "Bluetooth and WiFi each have their own measure button now, and how often they measure by themselves can be set per bed.",
+    "no": "Bluetooth og WiFi har nå hver sin måleknapp, og hvor ofte de måler av seg selv kan settes per seng."
   }
 }

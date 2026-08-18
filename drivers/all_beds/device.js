@@ -31,6 +31,7 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_connection',
   // Sist i lista med vilje — se kommentaren i bed/device.js.
   'linak_bed_signal_refresh',
+  'linak_bed_wifi_refresh',
 ]);
 
 class AllBedsDevice extends Homey.Device {
@@ -52,6 +53,9 @@ class AllBedsDevice extends Homey.Device {
     // egen verdi; det er der tallet hører hjemme.
     this.registerCapabilityListener('linak_bed_signal_refresh', () =>
       this.runOnAll((bed) => bed.measureSignal()));
+
+    this.registerCapabilityListener('linak_bed_wifi_refresh', () =>
+      this.runOnAll((bed) => bed.measureWifi()));
 
     // Veksler på gruppens egen huskede tilstand, så begge sengene alltid
     // settes LIKT — også om de skulle stå ulikt fra før.

@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -241,8 +241,8 @@
     "linak_bed_signal_refresh": {
       "type": "boolean",
       "title": {
-        "en": "Measure signal",
-        "no": "Mål signalet"
+        "en": "Measure Bluetooth",
+        "no": "Mål Bluetooth"
       },
       "getable": false,
       "setable": true,
@@ -265,6 +265,16 @@
       "uiComponent": "sensor",
       "insights": true,
       "icon": "/assets/capability-icons/connection.svg"
+    },
+    "linak_bed_wifi_refresh": {
+      "type": "boolean",
+      "title": {
+        "en": "Measure WiFi",
+        "no": "Mål WiFi"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button"
     }
   },
   "flow": {
@@ -461,7 +471,8 @@
         "linak_bed_connection",
         "linak_bed_signal_refresh",
         "linak_bed_signal",
-        "measure_signal_strength"
+        "measure_signal_strength",
+        "linak_bed_wifi_refresh"
       ],
       "platforms": [
         "local"
@@ -580,6 +591,25 @@
                 "no": "Les WiFi-signalet til ESP32-en som kjører proxyen hver sjette time. Dette er proxyen på nettet ditt, ikke sengen."
               },
               "value": true
+            },
+            {
+              "id": "signalIntervalHours",
+              "type": "number",
+              "label": {
+                "en": "Measure every",
+                "no": "Mål hver"
+              },
+              "hint": {
+                "en": "How often the automatic measurements run. Only applies to the measurements switched on above.",
+                "no": "Hvor ofte de automatiske målingene kjører. Gjelder kun målingene som er slått på over."
+              },
+              "value": 6,
+              "min": 1,
+              "max": 168,
+              "units": {
+                "en": "h",
+                "no": "t"
+              }
             }
           ]
         },
@@ -644,7 +674,8 @@
         "linak_bed_sit_up",
         "linak_bed_leg_relief",
         "linak_bed_connection",
-        "linak_bed_signal_refresh"
+        "linak_bed_signal_refresh",
+        "linak_bed_wifi_refresh"
       ],
       "platforms": [
         "local"

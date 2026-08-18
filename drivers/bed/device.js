@@ -28,7 +28,7 @@ const DEFAULT_MAX_RUN_SECONDS = 45;
 // Et kort skann fire ganger i døgnet fyller den. Skanning låser IKKE ut
 // sengens fjernkontroll — det er bare BLE-tilkobling som gjør det — så dette
 // koster ingenting annet enn noen sekunder med annonseringer.
-const SIGNAL_REFRESH_MS = 6 * 60 * 60 * 1000;
+const DEFAULT_SIGNAL_INTERVAL_HOURS = 6;
 // 12 sekunder, ikke 8. Paringen bruker 12, og det er den lengden som er bevist
 // å finne begge sengene her — den svakeste ligger på -87 dBm og rakk ikke å
 // annonsere innenfor 8 sekunder.
@@ -60,6 +60,7 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   // ESP32-ens eget WiFi-signal. Her er Homeys innebygde kapabilitet riktig
   // brukt — dette ER WiFi, og WiFi-ikonet hører hjemme på den.
   'measure_signal_strength',
+  'linak_bed_wifi_refresh',
 ]);
 
 class BedDevice extends Homey.Device {
@@ -81,6 +82,7 @@ class BedDevice extends Homey.Device {
     this.registerCapabilityListener('linak_bed_stop', () => this.stopMovement());
     this.registerCapabilityListener('linak_bed_light', () => this.setLight(!this.lightIsOn()));
     this.registerCapabilityListener('linak_bed_signal_refresh', () => this.measureSignal());
+    this.registerCapabilityListener('linak_bed_wifi_refresh', () => this.measureWifi());
 
     await this._setConnection('idle');
     this._startSignalRefresh();
@@ -101,6 +103,12 @@ class BedDevice extends Homey.Device {
     return this._bluetoothAutoEnabled() || this._wifiAutoEnabled();
   }
 
+  _signalIntervalMs() {
+    const hours = Number(this.getSetting('signalIntervalHours'));
+    const safe = Number.isFinite(hours) && hours > 0 ? hours : DEFAULT_SIGNAL_INTERVAL_HOURS;
+    return safe * 60 * 60 * 1000;
+  }
+
   // Første måling kommer et lite stykke etter oppstart, ikke midt i den —
   // Homey har nok å gjøre da. Sengene sprer seg ut fra hverandre etter MAC-en,
   // så to senger ikke skanner i samme sekund ved hver oppstart.
@@ -110,7 +118,7 @@ class BedDevice extends Homey.Device {
     const spreadMs = ((parseInt(this._mac.slice(-2), 16) || 0) % 60) * 1000;
     this._signalFirstTimer = this.homey.setTimeout(() => {
       this._refreshSignal();
-      this._signalTimer = this.homey.setInterval(() => this._refreshSignal(), SIGNAL_REFRESH_MS);
+      this._signalTimer = this.homey.setInterval(() => this._refreshSignal(), this._signalIntervalMs());
     }, SIGNAL_FIRST_DELAY_MS + spreadMs);
   }
 
@@ -124,18 +132,19 @@ class BedDevice extends Homey.Device {
   // Knappen. Samme måling som automatikken, men her venter noen på svaret, så
   // en feil skal vises i stedet for å gå stille i loggen.
   async measureSignal() {
-    const results = await Promise.allSettled([
-      this._measureSignalOnce(),
-      this._measureWifiOnce(),
-    ]);
+    const rssi = await this._measureSignalOnce();
+    if (rssi === null) {
+      throw new Error('The bed did not answer the scan. It may be out of range of the proxy.');
+    }
+    return true;
+  }
 
-    const measured = results.some((r) => r.status === 'fulfilled' && r.value !== null);
-    if (measured) return true;
-
-    // Begge feilet. Bluetooth-feilen er den som forteller brukeren noe.
-    const bluetooth = results[0];
-    if (bluetooth.status === 'rejected') throw bluetooth.reason;
-    throw new Error('The bed did not answer the scan. It may be out of range of the proxy.');
+  async measureWifi() {
+    const dbm = await this._measureWifiOnce();
+    if (dbm === null) {
+      throw new Error('The proxy did not report a WiFi signal.');
+    }
+    return true;
   }
 
   // Bakgrunnsarbeid: ingenting her skal nå brukeren eller velte appen. Er
@@ -198,7 +207,8 @@ class BedDevice extends Homey.Device {
 
   // Slår brukeren automatikken av eller på, skal det virke uten omstart.
   async onSettings({ changedKeys }) {
-    if (changedKeys.includes('signalAutoRefresh') || changedKeys.includes('wifiAutoRefresh')) {
+    const signalKeys = ['signalAutoRefresh', 'wifiAutoRefresh', 'signalIntervalHours'];
+    if (changedKeys.some((key) => signalKeys.includes(key))) {
       // Innstillingen er ikke skrevet ennå når denne kalles, så timeren settes
       // opp på neste tick.
       this.homey.setTimeout(() => this._startSignalRefresh(), 100);
