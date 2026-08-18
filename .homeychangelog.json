@@ -73,5 +73,9 @@
   "1.0.21": {
     "en": "Both beds is buttons only now. The measure interval is set in minutes, and the WiFi button has an icon.",
     "no": "Begge senger er kun knapper nå. Måleintervallet settes i minutter, og WiFi-knappen har fått ikon."
+  },
+  "1.0.22": {
+    "en": "One button now measures everything: Bluetooth, WiFi and whether the bed answers. How often it does so on its own is set in seconds.",
+    "no": "Én knapp måler nå alt: Bluetooth, WiFi og om sengen svarer. Hvor ofte den gjør det selv settes i sekunder."
   }
 }
