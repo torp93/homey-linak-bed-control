@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -248,6 +248,23 @@
       "setable": true,
       "uiComponent": "button",
       "icon": "/assets/capability-icons/connection.svg"
+    },
+    "linak_bed_signal": {
+      "type": "number",
+      "title": {
+        "en": "Bluetooth signal",
+        "no": "Bluetooth-signal"
+      },
+      "units": {
+        "en": "dBm",
+        "no": "dBm"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability-icons/connection.svg"
     }
   },
   "flow": {
@@ -442,8 +459,8 @@
         "linak_bed_both_up",
         "linak_bed_both_down",
         "linak_bed_connection",
-        "measure_signal_strength",
-        "linak_bed_signal_refresh"
+        "linak_bed_signal_refresh",
+        "linak_bed_signal"
       ],
       "platforms": [
         "local"

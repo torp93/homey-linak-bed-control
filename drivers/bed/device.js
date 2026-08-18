@@ -45,10 +45,15 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_both_up',
   'linak_bed_both_down',
   'linak_bed_connection',
-  'measure_signal_strength',
-  // Sist i lista med vilje: nye kapabiliteter som legges til på slutten gir en
-  // ren tilføying i migreringen, ikke en full ombygging av rekkefølgen.
+  // De to siste står i denne rekkefølgen fordi migreringen fjerner først og
+  // legger til etterpå: en enhet som hadde measure_signal_strength ender opp
+  // nøyaktig slik av seg selv, uten at rekkefølgen må bygges om.
+  //
+  // measure_signal_strength er Homeys innebygde kapabilitet, og den tegner et
+  // WiFi-ikon som ikke kan overstyres. Dette er Bluetooth-signalet mellom
+  // ESP32-en og sengen, så det fikk sin egen kapabilitet med riktig ikon.
   'linak_bed_signal_refresh',
+  'linak_bed_signal',
 ]);
 
 class BedDevice extends Homey.Device {
@@ -200,8 +205,8 @@ class BedDevice extends Homey.Device {
 
   async _reportSignal(rssi) {
     if (!Number.isFinite(rssi)) return;
-    if (!this.hasCapability('measure_signal_strength')) return;
-    await this.setCapabilityValue('measure_signal_strength', rssi).catch(() => {});
+    if (!this.hasCapability('linak_bed_signal')) return;
+    await this.setCapabilityValue('linak_bed_signal', rssi).catch(() => {});
   }
 
   // setAvailable() er en IPC-rundtur mot Homey-kjernen — unødvendig når
