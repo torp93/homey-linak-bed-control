@@ -21,6 +21,17 @@ const MOTOR_CAPABILITIES = Object.freeze({
 // ikke en normal kjøretid — den slår bare inn hvis stoppen aldri kommer.
 const DEFAULT_MAX_RUN_SECONDS = 45;
 
+// Signalstyrke hadde ingen kilde i normal drift: RSSI følger annonseringen,
+// og en vanlig kommando hopper over annonseringsventingen fordi adressetypen
+// er lagret fra paringen. Flisen ble derfor stående på samme tall i dagevis.
+//
+// Et kort skann fire ganger i døgnet fyller den. Skanning låser IKKE ut
+// sengens fjernkontroll — det er bare BLE-tilkobling som gjør det — så dette
+// koster ingenting annet enn noen sekunder med annonseringer.
+const SIGNAL_REFRESH_MS = 6 * 60 * 60 * 1000;
+const SIGNAL_SCAN_MS = 8000;
+const SIGNAL_FIRST_DELAY_MS = 90 * 1000;
+
 // Rekkefølgen her er den enheten skal ende opp med i appen.
 const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_back_up',
@@ -35,6 +46,9 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_both_down',
   'linak_bed_connection',
   'measure_signal_strength',
+  // Sist i lista med vilje: nye kapabiliteter som legges til på slutten gir en
+  // ren tilføying i migreringen, ikke en full ombygging av rekkefølgen.
+  'linak_bed_signal_refresh',
 ]);
 
 class BedDevice extends Homey.Device {
@@ -55,17 +69,100 @@ class BedDevice extends Homey.Device {
 
     this.registerCapabilityListener('linak_bed_stop', () => this.stopMovement());
     this.registerCapabilityListener('linak_bed_light', () => this.setLight(!this.lightIsOn()));
+    this.registerCapabilityListener('linak_bed_signal_refresh', () => this.measureSignal());
 
     await this._setConnection('idle');
+    this._startSignalRefresh();
     this.log(`LINAK-seng klar — ${this._mac}`);
+  }
+
+  _signalAutoEnabled() {
+    // Ulagret innstilling er udefinert på enheter som ble paret før den fantes.
+    // Standarden er på.
+    return this.getSetting('signalAutoRefresh') !== false;
+  }
+
+  // Første måling kommer et lite stykke etter oppstart, ikke midt i den —
+  // Homey har nok å gjøre da. Sengene sprer seg ut fra hverandre etter MAC-en,
+  // så to senger ikke skanner i samme sekund ved hver oppstart.
+  _startSignalRefresh() {
+    this._stopSignalRefresh();
+    if (!this._signalAutoEnabled()) return;
+    const spreadMs = ((parseInt(this._mac.slice(-2), 16) || 0) % 60) * 1000;
+    this._signalFirstTimer = this.homey.setTimeout(() => {
+      this._refreshSignal();
+      this._signalTimer = this.homey.setInterval(() => this._refreshSignal(), SIGNAL_REFRESH_MS);
+    }, SIGNAL_FIRST_DELAY_MS + spreadMs);
+  }
+
+  _stopSignalRefresh() {
+    if (this._signalFirstTimer) this.homey.clearTimeout(this._signalFirstTimer);
+    if (this._signalTimer) this.homey.clearInterval(this._signalTimer);
+    this._signalFirstTimer = null;
+    this._signalTimer = null;
+  }
+
+  // Knappen. Samme måling som automatikken, men her venter noen på svaret, så
+  // en feil skal vises i stedet for å gå stille i loggen.
+  async measureSignal() {
+    const rssi = await this._measureSignalOnce();
+    if (rssi === null) {
+      throw new Error('The bed did not answer the scan. It may be out of range of the proxy.');
+    }
+    return true;
+  }
+
+  // Bakgrunnsarbeid: ingenting her skal nå brukeren eller velte appen. Er
+  // proxy-adressen ikke satt, kaster _proxy() — og det er riktig svar her også,
+  // bare stille.
+  async _refreshSignal() {
+    try {
+      await this._measureSignalOnce();
+    } catch (error) {
+      this.log('Signalmåling hoppet over', error.message);
+    }
+  }
+
+  // Returnerer målt RSSI, eller null når sengen ikke svarte. Ingen annonsering
+  // betyr utenfor rekkevidde eller stille — da er det riktigere å la forrige tall
+  // stå enn å finne på et nytt.
+  async _measureSignalOnce() {
+    // Ikke stjel socketen fra en bevegelse som pågår.
+    if (this.getCapabilityValue('linak_bed_connection') === 'moving') return null;
+
+    const seen = await this._proxy().discover({ durationMs: SIGNAL_SCAN_MS });
+    const mine = seen.find((entry) =>
+      String(entry.mac).toUpperCase() === String(this._mac).toUpperCase());
+
+    if (!mine || !Number.isFinite(mine.rssi)) return null;
+
+    await this._reportSignal(mine.rssi);
+    this.log(`Signalstyrke oppdatert: ${mine.rssi} dBm`);
+    return mine.rssi;
+  }
+
+  // Slår brukeren automatikken av eller på, skal det virke uten omstart.
+  async onSettings({ changedKeys }) {
+    if (changedKeys.includes('signalAutoRefresh')) {
+      // Innstillingen er ikke skrevet ennå når denne kalles, så timeren settes
+      // opp på neste tick.
+      this.homey.setTimeout(() => this._startSignalRefresh(), 100);
+    }
   }
 
   // onDeleted er hendelsen Homey gir når BRUKEREN sletter enheten. Uten den
   // fortsetter en bevegelse som var i gang å kjøre i proxyen — den kjenner
   // ingen Homey-enheter og ville stoppet først på sikkerhetsgrensen.
   async onDeleted() {
+    this._stopSignalRefresh();
     this.homey.app.forgetBed(this._mac);
     this.log(`Seng slettet — ${this._mac} sluppet`);
+  }
+
+  // homey.setInterval ryddes automatisk når instansen rives, men en slettet
+  // seng skal slutte å skanne med én gang — ikke først når appen stopper.
+  async onUninit() {
+    this._stopSignalRefresh();
   }
 
   // --- Reparasjon -----------------------------------------------------------

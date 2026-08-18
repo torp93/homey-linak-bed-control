@@ -49,5 +49,9 @@
   "1.0.15": {
     "en": "A bed can now be repaired without pairing it again: change the proxy address, reset the connection, or look the bed up from scratch.",
     "no": "En seng kan nå repareres uten å pares på nytt: endre proxy-adressen, nullstill tilkoblingen, eller slå opp sengen fra bunnen."
+  },
+  "1.0.16": {
+    "en": "The Bluetooth signal now updates on its own every six hours, and there is a button to measure it right away. The automatic measurement can be turned off per bed.",
+    "no": "Bluetooth-signalet oppdaterer seg nå av seg selv hver sjette time, og det er en knapp for å måle med én gang. Den automatiske målingen kan slås av per seng."
   }
 }

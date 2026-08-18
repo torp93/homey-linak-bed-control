@@ -29,6 +29,8 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_sit_up',
   'linak_bed_leg_relief',
   'linak_bed_connection',
+  // Sist i lista med vilje — se kommentaren i bed/device.js.
+  'linak_bed_signal_refresh',
 ]);
 
 class AllBedsDevice extends Homey.Device {
@@ -44,6 +46,12 @@ class AllBedsDevice extends Homey.Device {
 
     this.registerCapabilityListener('linak_bed_stop', () =>
       this.runOnAll((bed) => bed.stopMovement()));
+
+    // Gruppa har ingen egen radio og viser ingen signalstyrke — knappen er her
+    // fordi det er herfra man styrer begge sengene. Hver seng oppdaterer sin
+    // egen verdi; det er der tallet hører hjemme.
+    this.registerCapabilityListener('linak_bed_signal_refresh', () =>
+      this.runOnAll((bed) => bed.measureSignal()));
 
     // Veksler på gruppens egen huskede tilstand, så begge sengene alltid
     // settes LIKT — også om de skulle stå ulikt fra før.

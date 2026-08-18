@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -237,6 +237,17 @@
       "setable": true,
       "uiComponent": "button",
       "icon": "/assets/capability-icons/light.svg"
+    },
+    "linak_bed_signal_refresh": {
+      "type": "boolean",
+      "title": {
+        "en": "Measure signal",
+        "no": "Mål signalet"
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/connection.svg"
     }
   },
   "flow": {
@@ -431,7 +442,8 @@
         "linak_bed_both_up",
         "linak_bed_both_down",
         "linak_bed_connection",
-        "measure_signal_strength"
+        "measure_signal_strength",
+        "linak_bed_signal_refresh"
       ],
       "platforms": [
         "local"
@@ -521,6 +533,28 @@
         {
           "type": "group",
           "label": {
+            "en": "Signal",
+            "no": "Signal"
+          },
+          "children": [
+            {
+              "id": "signalAutoRefresh",
+              "type": "checkbox",
+              "label": {
+                "en": "Measure automatically",
+                "no": "Mål automatisk"
+              },
+              "hint": {
+                "en": "Measure the Bluetooth signal every six hours. The measurement is a short scan; it does not connect to the bed, so the remote control keeps working. Turn this off to only measure when you press the button.",
+                "no": "Mål Bluetooth-signalet hver sjette time. Målingen er et kort skann; den kobler seg ikke til sengen, så fjernkontrollen virker som vanlig. Slå av for å kun måle når du trykker på knappen."
+              },
+              "value": true
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
             "en": "Bluetooth",
             "no": "Bluetooth"
           },
@@ -570,7 +604,8 @@
         "linak_bed_both_down",
         "linak_bed_sit_up",
         "linak_bed_leg_relief",
-        "linak_bed_connection"
+        "linak_bed_connection",
+        "linak_bed_signal_refresh"
       ],
       "platforms": [
         "local"
