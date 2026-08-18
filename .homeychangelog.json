@@ -81,5 +81,9 @@
   "1.0.23": {
     "en": "The measure button is now called Refresh, and the interval is set in minutes.",
     "no": "Måleknappen heter nå Oppdater, og intervallet settes i minutter."
+  },
+  "1.0.24": {
+    "en": "The Refresh button has a refresh icon.",
+    "no": "Oppdater-knappen har fått et oppdater-ikon."
   }
 }

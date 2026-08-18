@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -247,7 +247,7 @@
       "getable": false,
       "setable": true,
       "uiComponent": "button",
-      "icon": "/assets/capability-icons/connection.svg"
+      "icon": "/assets/capability-icons/refresh.svg"
     },
     "linak_bed_signal": {
       "type": "number",
