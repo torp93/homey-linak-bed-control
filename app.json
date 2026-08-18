@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -460,7 +460,8 @@
         "linak_bed_both_down",
         "linak_bed_connection",
         "linak_bed_signal_refresh",
-        "linak_bed_signal"
+        "linak_bed_signal",
+        "measure_signal_strength"
       ],
       "platforms": [
         "local"
@@ -558,12 +559,25 @@
               "id": "signalAutoRefresh",
               "type": "checkbox",
               "label": {
-                "en": "Measure automatically",
-                "no": "Mål automatisk"
+                "en": "Measure Bluetooth automatically",
+                "no": "Mål Bluetooth automatisk"
               },
               "hint": {
                 "en": "Measure the Bluetooth signal every six hours. The measurement is a short scan; it does not connect to the bed, so the remote control keeps working. Turn this off to only measure when you press the button.",
                 "no": "Mål Bluetooth-signalet hver sjette time. Målingen er et kort skann; den kobler seg ikke til sengen, så fjernkontrollen virker som vanlig. Slå av for å kun måle når du trykker på knappen."
+              },
+              "value": true
+            },
+            {
+              "id": "wifiAutoRefresh",
+              "type": "checkbox",
+              "label": {
+                "en": "Measure WiFi automatically",
+                "no": "Mål WiFi automatisk"
+              },
+              "hint": {
+                "en": "Read the WiFi signal of the ESP32 running the proxy every six hours. This is the proxy on your network, not the bed.",
+                "no": "Les WiFi-signalet til ESP32-en som kjører proxyen hver sjette time. Dette er proxyen på nettet ditt, ikke sengen."
               },
               "value": true
             }
@@ -601,7 +615,15 @@
         {
           "id": "connection"
         }
-      ]
+      ],
+      "capabilitiesOptions": {
+        "measure_signal_strength": {
+          "title": {
+            "en": "WiFi signal",
+            "no": "WiFi-signal"
+          }
+        }
+      }
     },
     {
       "id": "all_beds",

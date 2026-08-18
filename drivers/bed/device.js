@@ -29,7 +29,10 @@ const DEFAULT_MAX_RUN_SECONDS = 45;
 // sengens fjernkontroll — det er bare BLE-tilkobling som gjør det — så dette
 // koster ingenting annet enn noen sekunder med annonseringer.
 const SIGNAL_REFRESH_MS = 6 * 60 * 60 * 1000;
-const SIGNAL_SCAN_MS = 8000;
+// 12 sekunder, ikke 8. Paringen bruker 12, og det er den lengden som er bevist
+// å finne begge sengene her — den svakeste ligger på -87 dBm og rakk ikke å
+// annonsere innenfor 8 sekunder.
+const SIGNAL_SCAN_MS = 12000;
 const SIGNAL_FIRST_DELAY_MS = 90 * 1000;
 
 // Rekkefølgen her er den enheten skal ende opp med i appen.
@@ -54,6 +57,9 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   // ESP32-en og sengen, så det fikk sin egen kapabilitet med riktig ikon.
   'linak_bed_signal_refresh',
   'linak_bed_signal',
+  // ESP32-ens eget WiFi-signal. Her er Homeys innebygde kapabilitet riktig
+  // brukt — dette ER WiFi, og WiFi-ikonet hører hjemme på den.
+  'measure_signal_strength',
 ]);
 
 class BedDevice extends Homey.Device {
@@ -81,10 +87,18 @@ class BedDevice extends Homey.Device {
     this.log(`LINAK-seng klar — ${this._mac}`);
   }
 
-  _signalAutoEnabled() {
-    // Ulagret innstilling er udefinert på enheter som ble paret før den fantes.
-    // Standarden er på.
+  // Ulagret innstilling er udefinert på enheter som ble paret før den fantes.
+  // Standarden er på for begge.
+  _bluetoothAutoEnabled() {
     return this.getSetting('signalAutoRefresh') !== false;
+  }
+
+  _wifiAutoEnabled() {
+    return this.getSetting('wifiAutoRefresh') !== false;
+  }
+
+  _signalAutoEnabled() {
+    return this._bluetoothAutoEnabled() || this._wifiAutoEnabled();
   }
 
   // Første måling kommer et lite stykke etter oppstart, ikke midt i den —
@@ -110,22 +124,53 @@ class BedDevice extends Homey.Device {
   // Knappen. Samme måling som automatikken, men her venter noen på svaret, så
   // en feil skal vises i stedet for å gå stille i loggen.
   async measureSignal() {
-    const rssi = await this._measureSignalOnce();
-    if (rssi === null) {
-      throw new Error('The bed did not answer the scan. It may be out of range of the proxy.');
-    }
-    return true;
+    const results = await Promise.allSettled([
+      this._measureSignalOnce(),
+      this._measureWifiOnce(),
+    ]);
+
+    const measured = results.some((r) => r.status === 'fulfilled' && r.value !== null);
+    if (measured) return true;
+
+    // Begge feilet. Bluetooth-feilen er den som forteller brukeren noe.
+    const bluetooth = results[0];
+    if (bluetooth.status === 'rejected') throw bluetooth.reason;
+    throw new Error('The bed did not answer the scan. It may be out of range of the proxy.');
   }
 
   // Bakgrunnsarbeid: ingenting her skal nå brukeren eller velte appen. Er
   // proxy-adressen ikke satt, kaster _proxy() — og det er riktig svar her også,
   // bare stille.
   async _refreshSignal() {
-    try {
-      await this._measureSignalOnce();
-    } catch (error) {
-      this.log('Signalmåling hoppet over', error.message);
+    if (this._bluetoothAutoEnabled()) {
+      try {
+        await this._measureSignalOnce();
+      } catch (error) {
+        this.log('Bluetooth-måling hoppet over', error.message);
+      }
     }
+    if (this._wifiAutoEnabled()) {
+      try {
+        await this._measureWifiOnce();
+      } catch (error) {
+        this.log('WiFi-måling hoppet over', error.message);
+      }
+    }
+  }
+
+  // WiFi-signalet leses fra proxyen, ikke fra sengen. Verdien er den samme på
+  // begge sengene — det er én ESP32 — og det er riktig: det er dén lenken som
+  // er felles for dem.
+  async _measureWifiOnce() {
+    if (!this.hasCapability('measure_signal_strength')) return null;
+
+    const dbm = await this._proxy().wifiSignal();
+    if (!Number.isFinite(dbm)) return null;
+
+    const rounded = Math.round(dbm);
+    await this.setCapabilityValue('measure_signal_strength', rounded).catch(() => {});
+    this.log(`WiFi-signal oppdatert: ${rounded} dBm`);
+    return rounded;
   }
 
   // Returnerer målt RSSI, eller null når sengen ikke svarte. Ingen annonsering
@@ -139,7 +184,12 @@ class BedDevice extends Homey.Device {
     const mine = seen.find((entry) =>
       String(entry.mac).toUpperCase() === String(this._mac).toUpperCase());
 
-    if (!mine || !Number.isFinite(mine.rssi)) return null;
+    if (!mine || !Number.isFinite(mine.rssi)) {
+      // Uten denne linja er «sengen svarte ikke» og «målingen ble aldri gjort»
+      // like tause i loggen, og de betyr helt ulike ting.
+      this.log(`Sengen annonserte ikke innen ${SIGNAL_SCAN_MS} ms — signalet står uendret`);
+      return null;
+    }
 
     await this._reportSignal(mine.rssi);
     this.log(`Signalstyrke oppdatert: ${mine.rssi} dBm`);
@@ -148,7 +198,7 @@ class BedDevice extends Homey.Device {
 
   // Slår brukeren automatikken av eller på, skal det virke uten omstart.
   async onSettings({ changedKeys }) {
-    if (changedKeys.includes('signalAutoRefresh')) {
+    if (changedKeys.includes('signalAutoRefresh') || changedKeys.includes('wifiAutoRefresh')) {
       // Innstillingen er ikke skrevet ennå når denne kalles, så timeren settes
       // opp på neste tick.
       this.homey.setTimeout(() => this._startSignalRefresh(), 100);
