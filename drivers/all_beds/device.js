@@ -61,7 +61,7 @@ class AllBedsDevice extends Homey.Device {
       await this.setStoreValue('lightOn', next).catch(() => {});
     });
 
-    await this._setConnection('idle');
+    await this.refreshConnection();
     this.log('Begge senger klar');
   }
 
@@ -72,6 +72,39 @@ class AllBedsDevice extends Homey.Device {
   async _setConnection(state) {
     if (!this.hasCapability('linak_bed_connection')) return;
     await this.setCapabilityValue('linak_bed_connection', state).catch(() => {});
+  }
+
+  // Gruppa har ingen egen tilstand — den er summen av sengene. «Klar» skal kun
+  // stå der så lenge ALLE sengene melder klar; ellers ville gruppa sagt at alt
+  // er i orden mens den ene sengen står i feil.
+  //
+  // Rangeringen er den mest alvorlige tilstanden vinner: en seng i feil er
+  // viktigere å vise enn en som beveger seg.
+  static get STATE_ORDER() {
+    return ['idle', 'busy', 'moving', 'error'];
+  }
+
+  async refreshConnection() {
+    try {
+      const beds = this._beds();
+
+      // Ingen senger å styre er ikke «klar».
+      if (!beds.length) return this._setConnection('error');
+
+      const order = AllBedsDevice.STATE_ORDER;
+      let worst = 'idle';
+      for (const bed of beds) {
+        const state = bed.getCapabilityValue('linak_bed_connection');
+        // En seng uten lesbar tilstand kan ikke bekrefte at den er klar.
+        if (!order.includes(state)) return this._setConnection('error');
+        if (order.indexOf(state) > order.indexOf(worst)) worst = state;
+      }
+
+      return this._setConnection(worst);
+    } catch (error) {
+      this.error('Kunne ikke oppdatere gruppetilstanden', error.message);
+      return undefined;
+    }
   }
 
   // Kjører på alle senger SAMTIDIG. Køen i BedProxy er per seng, så to senger
@@ -95,21 +128,19 @@ class AllBedsDevice extends Homey.Device {
       .filter(({ result }) => result.status === 'rejected');
 
     if (failed.length === beds.length) {
-      await this._setConnection('error');
+      await this.refreshConnection();
       throw failed[0].result.reason;
     }
 
     if (failed.length) {
-      await this._setConnection('error');
       for (const { result, bed } of failed) {
         this.error(`${bed.getName()} feilet`, result.reason && result.reason.message);
       }
       // Delvis suksess er ikke en feil for brukeren — den andre sengen gikk.
       this.log(`${beds.length - failed.length} av ${beds.length} senger utført`);
-    } else {
-      await this._setConnection('idle');
     }
 
+    await this.refreshConnection();
     return true;
   }
 

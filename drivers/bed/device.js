@@ -162,6 +162,8 @@ class BedDevice extends Homey.Device {
     this._stopSignalRefresh();
     this.homey.app.forgetBed(this._mac);
     this.log(`Seng slettet — ${this._mac} sluppet`);
+    // Gruppa teller sengene på nytt uten denne.
+    this._notifyGroups();
   }
 
   // homey.setInterval ryddes automatisk når instansen rives, men en slettet
@@ -201,6 +203,22 @@ class BedDevice extends Homey.Device {
   async _setConnection(state) {
     if (!this.hasCapability('linak_bed_connection')) return;
     await this.setCapabilityValue('linak_bed_connection', state).catch(() => {});
+    this._notifyGroups();
+  }
+
+  // «Begge senger» viser summen av sengene, så den må få vite når denne endrer
+  // seg. Fyr-og-glem: gruppa er pynt, og en feil her skal ikke velte en
+  // kommando som er på vei til sengen.
+  _notifyGroups() {
+    try {
+      for (const group of this.homey.drivers.getDriver('all_beds').getDevices()) {
+        if (typeof group.refreshConnection === 'function') {
+          Promise.resolve(group.refreshConnection()).catch(() => {});
+        }
+      }
+    } catch (error) {
+      // Gruppa finnes ikke nødvendigvis — den er en valgfri enhet.
+    }
   }
 
   async _reportSignal(rssi) {

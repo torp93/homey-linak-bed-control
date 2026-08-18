@@ -57,5 +57,9 @@
   "1.0.17": {
     "en": "The signal tile now shows a Bluetooth icon, because that is what it measures: the link between the proxy and the bed.",
     "no": "Signalflisen har nå et Bluetooth-ikon, for det er det den måler: forbindelsen mellom proxyen og sengen."
+  },
+  "1.0.18": {
+    "en": "Both beds now says Ready only while every bed reports ready, and follows them as they move.",
+    "no": "Begge senger sier nå Klar kun så lenge hver seng melder klar, og følger dem mens de beveger seg."
   }
 }
