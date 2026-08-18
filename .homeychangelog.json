@@ -77,5 +77,9 @@
   "1.0.22": {
     "en": "One button now measures everything: Bluetooth, WiFi and whether the bed answers. How often it does so on its own is set in seconds.",
     "no": "Én knapp måler nå alt: Bluetooth, WiFi og om sengen svarer. Hvor ofte den gjør det selv settes i sekunder."
+  },
+  "1.0.23": {
+    "en": "The measure button is now called Refresh, and the interval is set in minutes.",
+    "no": "Måleknappen heter nå Oppdater, og intervallet settes i minutter."
   }
 }

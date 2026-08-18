@@ -25,10 +25,11 @@ const DEFAULT_MAX_RUN_SECONDS = 45;
 // og en vanlig kommando hopper over annonseringsventingen fordi adressetypen
 // er lagret fra paringen. Flisen ble derfor stående på samme tall i dagevis.
 //
-// Et kort skann fire ganger i døgnet fyller den. Skanning låser IKKE ut
-// sengens fjernkontroll — det er bare BLE-tilkobling som gjør det — så dette
-// koster ingenting annet enn noen sekunder med annonseringer.
-const DEFAULT_SIGNAL_INTERVAL_SECONDS = 6 * 60 * 60;
+// Et kort skann med jevne mellomrom fyller den, og forteller samtidig om
+// sengen svarer i det hele tatt. Skanning låser IKKE ut sengens fjernkontroll
+// — det er bare BLE-tilkobling som gjør det — så dette koster ingenting annet
+// enn noen sekunder med annonseringer.
+const DEFAULT_SIGNAL_INTERVAL_MINUTES = 6 * 60;
 // 12 sekunder, ikke 8. Paringen bruker 12, og det er den lengden som er bevist
 // å finne begge sengene her — den svakeste ligger på -87 dBm og rakk ikke å
 // annonsere innenfor 8 sekunder.
@@ -94,7 +95,11 @@ class BedDevice extends Homey.Device {
   }
 
   _wifiAutoEnabled() {
-    return this.getSetting('wifiAutoRefresh', 'readyAutoRefresh') !== false;
+    return this.getSetting('wifiAutoRefresh') !== false;
+  }
+
+  _readyAutoEnabled() {
+    return this.getSetting('readyAutoRefresh') !== false;
   }
 
   _signalAutoEnabled() {
@@ -102,15 +107,12 @@ class BedDevice extends Homey.Device {
   }
 
   _signalIntervalMs() {
-    const seconds = Number(this.getSetting('signalIntervalSeconds'));
-    // Under 60 s ville målingene overlappe hverandre — hvert skann tar 12 s.
-    const safe = Number.isFinite(seconds) && seconds >= 60
-      ? seconds : DEFAULT_SIGNAL_INTERVAL_SECONDS;
-    return safe * 1000;
-  }
-
-  _readyAutoEnabled() {
-    return this.getSetting('readyAutoRefresh') !== false;
+    const minutes = Number(this.getSetting('signalIntervalMinutes'));
+    // Nedre grense 5 min: hvert skann tar 12 s, og knappen dekker behovet for
+    // et svar med én gang.
+    const safe = Number.isFinite(minutes) && minutes >= 5
+      ? minutes : DEFAULT_SIGNAL_INTERVAL_MINUTES;
+    return safe * 60 * 1000;
   }
 
   // Første måling kommer et lite stykke etter oppstart, ikke midt i den —
@@ -133,9 +135,8 @@ class BedDevice extends Homey.Device {
     this._signalTimer = null;
   }
 
-  // Knappen. Samme måling som automatikken, men her venter noen på svaret, så
-  // en feil skal vises i stedet for å gå stille i loggen.
-  // Knappen: alt som kan måles, i én omgang. Skannet er felles for
+  // Knappen: alt som kan måles, i én omgang. Her venter noen på svaret, så en
+  // feil skal vises i stedet for å gå stille i loggen. Skannet er felles for
   // Bluetooth-tallet og klar-statusen — å skanne to ganger for det samme ville
   // vært 24 sekunder til ingen nytte.
   async measureStatus() {
@@ -233,7 +234,7 @@ class BedDevice extends Homey.Device {
   // Slår brukeren automatikken av eller på, skal det virke uten omstart.
   async onSettings({ changedKeys }) {
     const signalKeys = [
-      'signalAutoRefresh', 'wifiAutoRefresh', 'readyAutoRefresh', 'signalIntervalSeconds',
+      'signalAutoRefresh', 'wifiAutoRefresh', 'readyAutoRefresh', 'signalIntervalMinutes',
     ];
     if (changedKeys.some((key) => signalKeys.includes(key))) {
       // Innstillingen er ikke skrevet ennå når denne kalles, så timeren settes

@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -241,8 +241,8 @@
     "linak_bed_signal_refresh": {
       "type": "boolean",
       "title": {
-        "en": "Measure status",
-        "no": "Mål status"
+        "en": "Refresh",
+        "no": "Oppdater"
       },
       "getable": false,
       "setable": true,
@@ -595,22 +595,22 @@
               "value": true
             },
             {
-              "id": "signalIntervalSeconds",
+              "id": "signalIntervalMinutes",
               "type": "number",
               "label": {
                 "en": "Measure every",
                 "no": "Mål hver"
               },
               "hint": {
-                "en": "How often the automatic measurement runs. Each one costs a 12 second Bluetooth scan, so 60 seconds is the floor. Default is six hours.",
-                "no": "Hvor ofte den automatiske målingen kjører. Hver måling koster et Bluetooth-skann på 12 sekunder, så 60 sekunder er nedre grense. Standard er seks timer."
+                "en": "How often the automatic measurement runs. Each one costs a 12 second Bluetooth scan. Use the Refresh button when you want an answer now.",
+                "no": "Hvor ofte den automatiske målingen kjører. Hver måling koster et Bluetooth-skann på 12 sekunder. Bruk Oppdater-knappen når du vil ha svar med én gang."
               },
-              "value": 21600,
-              "min": 60,
-              "max": 604800,
+              "value": 360,
+              "min": 5,
+              "max": 10080,
               "units": {
-                "en": "s",
-                "no": "s"
+                "en": "min",
+                "no": "min"
               }
             }
           ]
