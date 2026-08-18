@@ -1,0 +1,221 @@
+<!--
+  Reparasjonsvisning for én seng.
+
+  Den finnes fordi de tre tingene som faktisk ryker i drift ikke kan fikses fra
+  enhetssiden: ESP32-en har fått ny IP, BLE-økten har satt seg fast, eller de
+  lagrede GATT-handlene stemmer ikke lenger etter en firmwareoppdatering.
+  Alternativet var å slette sengen og pare den på nytt — med to minutters
+  strømbrudd — for noe som egentlig bare er en adresse som har flyttet seg.
+
+  Samme mekanikk som paringsvisningene: callback-stil på Homey.emit, egen CSS,
+  IIFE rundt skriptet. Homey injiserer homey.js selv.
+
+  Engelsk er appens grunnspråk — norsk vises kun når Homey står på norsk.
+-->
+<style>
+  .lb { padding: 0 24px; line-height: 1.5; }
+  .lb p.lead { margin-top: 0; }
+  .lb label { display: block; margin: 14px 0 4px; font-size: 0.9em; opacity: 0.75; }
+  .lb input { width: 100%; box-sizing: border-box; padding: 9px 10px; font-size: 1em;
+              border: 1px solid rgba(128,128,128,0.4); border-radius: 6px;
+              background: transparent; color: inherit; }
+  .lb .buttons { display: flex; gap: 10px; margin-top: 18px; }
+  .lb button { flex: 1 1 0; min-width: 0; box-sizing: border-box; padding: 11px;
+               font-size: 0.95em; border-radius: 6px; cursor: pointer;
+               border: 1px solid rgba(128,128,128,0.4); background: transparent;
+               color: inherit; }
+  .lb button.primary { background: #004B76; border-color: #004B76; color: #fff; }
+  .lb button[disabled] { opacity: 0.5; cursor: default; }
+  .lb .wide { display: block; width: 100%; margin-top: 10px; }
+  .lb hr { border: 0; border-top: 1px solid rgba(128,128,128,0.25); margin: 22px 0 4px; }
+  .lb h3 { font-size: 0.95em; margin: 16px 0 6px; }
+  .lb .hint { font-size: 0.82em; opacity: 0.7; margin: 0; }
+  .lb #result { margin-top: 16px; white-space: pre-wrap; font-size: 0.88em; line-height: 1.45; }
+  .lb #result.ok { color: #1a8a3c; }
+  .lb #result.bad { color: #c0392b; }
+</style>
+
+<div class="lb">
+  <p class="lead" id="lead"></p>
+
+  <label for="host" id="hostLabel"></label>
+  <input id="host" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="192.168.1.50">
+
+  <label for="port" id="portLabel"></label>
+  <input id="port" type="number" min="1" max="65535" value="6053">
+
+  <div class="buttons">
+    <button id="test"></button>
+    <button id="save" class="primary"></button>
+  </div>
+
+  <hr>
+
+  <h3 id="resetTitle"></h3>
+  <p class="hint" id="resetHint"></p>
+  <button id="reset" class="wide"></button>
+
+  <h3 id="handlesTitle"></h3>
+  <p class="hint" id="handlesHint"></p>
+  <button id="handles" class="wide"></button>
+
+  <div id="result"></div>
+</div>
+
+<script type="application/javascript">
+(function () {
+  const STRINGS = {
+    en: {
+      title: 'Repair the connection',
+      lead: 'The bed itself is not touched here. This screen fixes the link to it: '
+          + 'where the Bluetooth proxy is, and a session that has got stuck.',
+      hostLabel: 'Proxy address',
+      portLabel: 'Port (native API, normally 6053)',
+      test: 'Test the connection',
+      save: 'Save address',
+      resetTitle: 'Reset the connection',
+      resetHint: 'Drops the Bluetooth session and the connection to the proxy. '
+               + 'The next command builds them again. Try this first if commands '
+               + 'stopped working while the address is still correct.',
+      reset: 'Reset the connection',
+      handlesTitle: 'Look up the bed again',
+      handlesHint: 'The app remembers where the bed keeps its command channel, '
+                 + 'which makes every command faster. Clear it if the bed has had '
+                 + 'a firmware update and no longer responds.',
+      handles: 'Clear the remembered lookup',
+      testing: 'Contacting the proxy…',
+      invalidHost: 'Enter a valid IP address or hostname.',
+      invalidPort: 'Port must be between 1 and 65535.',
+      failed: 'Could not reach it: ',
+      noProxy: 'Connected, but this device does not have bluetooth_proxy enabled.',
+      saved: 'Address saved.',
+      wasReset: 'Connection reset. The next command will connect again.',
+      handlesCleared: 'Cleared. The next command looks the bed up from scratch.',
+    },
+    no: {
+      title: 'Reparer tilkoblingen',
+      lead: 'Sengen selv røres ikke her. Denne skjermen fikser veien til den: '
+          + 'hvor Bluetooth-proxyen er, og en økt som har satt seg fast.',
+      hostLabel: 'Proxy-adresse',
+      portLabel: 'Port (native API, normalt 6053)',
+      test: 'Test tilkoblingen',
+      save: 'Lagre adressen',
+      resetTitle: 'Nullstill tilkoblingen',
+      resetHint: 'Slipper Bluetooth-økten og forbindelsen til proxyen. Neste '
+               + 'kommando bygger dem opp igjen. Prøv dette først hvis kommandoene '
+               + 'sluttet å virke mens adressen fortsatt stemmer.',
+      reset: 'Nullstill tilkoblingen',
+      handlesTitle: 'Slå opp sengen på nytt',
+      handlesHint: 'Appen husker hvor sengen har kommandokanalen sin, og det gjør '
+                 + 'hver kommando raskere. Tøm den hvis sengen har fått ny '
+                 + 'firmware og ikke svarer lenger.',
+      handles: 'Tøm det huskede oppslaget',
+      testing: 'Kobler til proxyen …',
+      invalidHost: 'Skriv inn en gyldig IP-adresse eller vertsnavn.',
+      invalidPort: 'Porten må være mellom 1 og 65535.',
+      failed: 'Fikk ikke kontakt: ',
+      noProxy: 'Tilkoblet, men denne enheten har ikke bluetooth_proxy slått på.',
+      saved: 'Adressen er lagret.',
+      wasReset: 'Tilkoblingen er nullstilt. Neste kommando kobler opp på nytt.',
+      handlesCleared: 'Tømt. Neste kommando slår opp sengen fra bunnen.',
+    },
+  };
+
+  function pickLanguage() {
+    try {
+      if (typeof Homey !== 'undefined' && typeof Homey.getLanguage === 'function') {
+        if (Homey.getLanguage() === 'no') return STRINGS.no;
+      }
+    } catch (error) { /* faller gjennom til nettleserspråket */ }
+    const tag = String((navigator && navigator.language) || '').toLowerCase();
+    return (tag.indexOf('nb') === 0 || tag.indexOf('nn') === 0 || tag.indexOf('no') === 0)
+      ? STRINGS.no : STRINGS.en;
+  }
+
+  const T = pickLanguage();
+  try { Homey.setTitle(T.title); } catch (error) { /* Homeys egen topptekst */ }
+
+  const hostEl = document.getElementById('host');
+  const portEl = document.getElementById('port');
+  const resultEl = document.getElementById('result');
+  const testBtn = document.getElementById('test');
+  const saveBtn = document.getElementById('save');
+  const resetBtn = document.getElementById('reset');
+  const handlesBtn = document.getElementById('handles');
+
+  for (const key of ['lead', 'hostLabel', 'portLabel', 'resetTitle', 'resetHint',
+    'handlesTitle', 'handlesHint']) {
+    document.getElementById(key).textContent = T[key];
+  }
+  testBtn.textContent = T.test;
+  saveBtn.textContent = T.save;
+  resetBtn.textContent = T.reset;
+  handlesBtn.textContent = T.handles;
+
+  function show(text, cls) {
+    resultEl.textContent = text;
+    resultEl.className = cls || '';
+  }
+
+  Homey.emit('getProxy', null, (error, current) => {
+    if (error || !current) return;
+    if (current.host) hostEl.value = current.host;
+    if (current.port) portEl.value = current.port;
+  });
+
+  function readInputs() {
+    const host = hostEl.value.trim();
+    const port = Number(portEl.value || 6053);
+    if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show(T.invalidHost, 'bad'); return null; }
+    if (!Number.isInteger(port) || port < 1 || port > 65535) { show(T.invalidPort, 'bad'); return null; }
+    return { host: host, port: port };
+  }
+
+  testBtn.addEventListener('click', () => {
+    const input = readInputs();
+    if (!input) return;
+    show(T.testing, '');
+    testBtn.disabled = true;
+    Homey.emit('testProxy', input, (error, info) => {
+      testBtn.disabled = false;
+      if (error) { show(T.failed + (error.message || error), 'bad'); return; }
+      const lines = [
+        info.name,
+        'ESPHome ' + info.esphomeVersion + '  ·  ' + info.model,
+        info.macAddress,
+      ].join('\n');
+      if (!info.bluetoothProxy) { show(lines + '\n\n' + T.noProxy, 'bad'); return; }
+      show('✓ ' + lines, 'ok');
+    });
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const input = readInputs();
+    if (!input) return;
+    saveBtn.disabled = true;
+    Homey.emit('saveProxy', input, (error) => {
+      saveBtn.disabled = false;
+      if (error) { show(String(error.message || error), 'bad'); return; }
+      show(T.saved, 'ok');
+    });
+  });
+
+  resetBtn.addEventListener('click', () => {
+    resetBtn.disabled = true;
+    Homey.emit('resetConnection', null, (error) => {
+      resetBtn.disabled = false;
+      if (error) { show(String(error.message || error), 'bad'); return; }
+      show(T.wasReset, 'ok');
+    });
+  });
+
+  handlesBtn.addEventListener('click', () => {
+    handlesBtn.disabled = true;
+    Homey.emit('forgetHandles', null, (error) => {
+      handlesBtn.disabled = false;
+      if (error) { show(String(error.message || error), 'bad'); return; }
+      show(T.handlesCleared, 'ok');
+    });
+  });
+})();
+</script>

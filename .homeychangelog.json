@@ -45,5 +45,9 @@
   "1.0.14": {
     "en": "Pairing is now in English as well as Norwegian, error messages are readable, and the Bluetooth proxy address is always your own.",
     "no": "Paringen finnes nå på engelsk i tillegg til norsk, feilmeldingene er til å forstå, og proxy-adressen er alltid din egen."
+  },
+  "1.0.15": {
+    "en": "A bed can now be repaired without pairing it again: change the proxy address, reset the connection, or look the bed up from scratch.",
+    "no": "En seng kan nå repareres uten å pares på nytt: endre proxy-adressen, nullstill tilkoblingen, eller slå opp sengen fra bunnen."
   }
 }

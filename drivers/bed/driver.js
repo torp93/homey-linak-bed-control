@@ -48,6 +48,39 @@ class BedDriver extends Homey.Driver {
     });
   }
 
+  // Reparasjon. I motsetning til onPair får denne enheten inn, så knappene når
+  // den parede sengen direkte. Homey kaller inngangen «Reparer»; visningen
+  // setter sin egen tittel.
+  //
+  // Den finnes for de tre feilene som ellers krevde full ompare — med to
+  // minutters strømbrudd — selv om sengen er helt frisk: proxyen har fått ny
+  // IP, økten har satt seg fast, eller de lagrede GATT-handlene er utdaterte.
+  async onRepair(session, device) {
+    // Adressehåndteringen er den samme som i paringen, med vilje: én vei inn
+    // til innstillingene, én validering.
+    session.setHandler('getProxy', () => {
+      const { host, port } = resolveProxyConfig(this.homey.settings);
+      return { host: host || '', port };
+    });
+
+    session.setHandler('testProxy', ({ host, port }) =>
+      this.homey.app.testProxyConnection(host, port));
+
+    session.setHandler('saveProxy', async ({ host, port }) => {
+      const address = String(host || '').trim();
+      const number = Number(port);
+      if (!isValidHost(address)) throw new Error('That address does not look valid.');
+      if (!isValidPort(number)) throw new Error('That port does not look valid.');
+      await this.homey.settings.set(SETTING_HOST, address);
+      await this.homey.settings.set(SETTING_PORT, number);
+      this.log('Proxy-adresse satt fra reparasjon', { host: address, port: number });
+      return true;
+    });
+
+    session.setHandler('resetConnection', () => device.resetConnection());
+    session.setHandler('forgetHandles', () => device.forgetStoredHandles());
+  }
+
   async onPairListDevices() {
     const proxy = this.homey.app.getProxy();
     const advertisements = await proxy.discover({ durationMs: 12000 });

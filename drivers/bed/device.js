@@ -68,6 +68,30 @@ class BedDevice extends Homey.Device {
     this.log(`Seng slettet — ${this._mac} sluppet`);
   }
 
+  // --- Reparasjon -----------------------------------------------------------
+
+  // Det brukeren mener med «start appen på nytt»: slipp BLE-økten for denne
+  // sengen og riv ned proxy-klienten, så neste kommando bygger alt friskt.
+  // En app kan ikke restarte seg selv gjennom SDK-et, men dette er den delen
+  // en restart faktisk fikser.
+  async resetConnection() {
+    this.homey.app.forgetBed(this._mac);
+    this.homey.app.resetProxy();
+    await this._setConnection('idle');
+    this.log('Tilkoblingen nullstilt fra reparasjonsvisningen');
+    return true;
+  }
+
+  // Lagrede GATT-handles sparer ~1 s per oppkobling, men blir feil hvis sengen
+  // har fått ny firmware. ATT-feil 1 rydder dem av seg selv; dette er veien ut
+  // når sengen svarer med noe annet i stedet.
+  async forgetStoredHandles() {
+    this._storedHandles = null;
+    await this.unsetStoreValue('gattHandles').catch(() => {});
+    this.log('Lagrede GATT-handles tømt fra reparasjonsvisningen');
+    return true;
+  }
+
   _proxy() {
     return this.homey.app.getProxy();
   }
