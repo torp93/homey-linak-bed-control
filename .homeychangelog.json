@@ -85,5 +85,9 @@
   "1.0.24": {
     "en": "The Refresh button has a refresh icon.",
     "no": "Oppdater-knappen har fått et oppdater-ikon."
+  },
+  "1.0.25": {
+    "en": "Refresh no longer reports a timeout. The measurement takes twelve seconds, which is longer than Homey waits for a button, so it now runs in the background.",
+    "no": "Oppdater melder ikke lenger timeout. Målingen tar tolv sekunder, lenger enn Homey venter på en knapp, så den kjører nå i bakgrunnen."
   }
 }

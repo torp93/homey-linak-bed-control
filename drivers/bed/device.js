@@ -81,7 +81,7 @@ class BedDevice extends Homey.Device {
 
     this.registerCapabilityListener('linak_bed_stop', () => this.stopMovement());
     this.registerCapabilityListener('linak_bed_light', () => this.setLight(!this.lightIsOn()));
-    this.registerCapabilityListener('linak_bed_signal_refresh', () => this.measureStatus());
+    this.registerCapabilityListener('linak_bed_signal_refresh', () => this.refreshStatus());
 
     await this._setConnection('idle');
     this._startSignalRefresh();
@@ -149,6 +149,9 @@ class BedDevice extends Homey.Device {
     if (!entry && wifi === null) {
       throw new Error('Neither the bed nor the proxy answered. Check that the proxy is powered and on the network.');
     }
+
+    this.log(`Statusmåling ferdig — seng ${entry ? `${entry.rssi} dBm` : 'svarte ikke'}, `
+      + `WiFi ${wifi === null ? 'ukjent' : `${wifi} dBm`}`);
     return true;
   }
 
