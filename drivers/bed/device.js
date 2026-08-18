@@ -28,7 +28,7 @@ const DEFAULT_MAX_RUN_SECONDS = 45;
 // Et kort skann fire ganger i døgnet fyller den. Skanning låser IKKE ut
 // sengens fjernkontroll — det er bare BLE-tilkobling som gjør det — så dette
 // koster ingenting annet enn noen sekunder med annonseringer.
-const DEFAULT_SIGNAL_INTERVAL_HOURS = 6;
+const DEFAULT_SIGNAL_INTERVAL_MINUTES = 360;
 // 12 sekunder, ikke 8. Paringen bruker 12, og det er den lengden som er bevist
 // å finne begge sengene her — den svakeste ligger på -87 dBm og rakk ikke å
 // annonsere innenfor 8 sekunder.
@@ -104,9 +104,10 @@ class BedDevice extends Homey.Device {
   }
 
   _signalIntervalMs() {
-    const hours = Number(this.getSetting('signalIntervalHours'));
-    const safe = Number.isFinite(hours) && hours > 0 ? hours : DEFAULT_SIGNAL_INTERVAL_HOURS;
-    return safe * 60 * 60 * 1000;
+    const minutes = Number(this.getSetting('signalIntervalMinutes'));
+    const safe = Number.isFinite(minutes) && minutes > 0
+      ? minutes : DEFAULT_SIGNAL_INTERVAL_MINUTES;
+    return safe * 60 * 1000;
   }
 
   // Første måling kommer et lite stykke etter oppstart, ikke midt i den —
@@ -207,7 +208,7 @@ class BedDevice extends Homey.Device {
 
   // Slår brukeren automatikken av eller på, skal det virke uten omstart.
   async onSettings({ changedKeys }) {
-    const signalKeys = ['signalAutoRefresh', 'wifiAutoRefresh', 'signalIntervalHours'];
+    const signalKeys = ['signalAutoRefresh', 'wifiAutoRefresh', 'signalIntervalMinutes'];
     if (changedKeys.some((key) => signalKeys.includes(key))) {
       // Innstillingen er ikke skrevet ennå når denne kalles, så timeren settes
       // opp på neste tick.

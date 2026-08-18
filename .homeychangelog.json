@@ -69,5 +69,9 @@
   "1.0.20": {
     "en": "Bluetooth and WiFi each have their own measure button now, and how often they measure by themselves can be set per bed.",
     "no": "Bluetooth og WiFi har nå hver sin måleknapp, og hvor ofte de måler av seg selv kan settes per seng."
+  },
+  "1.0.21": {
+    "en": "Both beds is buttons only now. The measure interval is set in minutes, and the WiFi button has an icon.",
+    "no": "Begge senger er kun knapper nå. Måleintervallet settes i minutter, og WiFi-knappen har fått ikon."
   }
 }

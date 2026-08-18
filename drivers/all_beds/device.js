@@ -15,8 +15,9 @@ const MOTOR_CAPABILITIES = Object.freeze({
   linak_bed_leg_down: 'legDown',
 });
 
-// Samme rekkefølge som på en enkelt seng, men uten signalstyrke — gruppa har
-// ingen egen radio, og et snitt av to senger ville vært misvisende.
+// Samme rekkefølge som på en enkelt seng, men uten tilkoblingstilstand,
+// signalstyrke og måleknapper: gruppa har ingen egen radio. Alt det hører
+// hjemme på sengene, der tallene faktisk gjelder.
 const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_back_up',
   'linak_bed_back_down',
@@ -28,10 +29,6 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'linak_bed_both_down',
   'linak_bed_sit_up',
   'linak_bed_leg_relief',
-  'linak_bed_connection',
-  // Sist i lista med vilje — se kommentaren i bed/device.js.
-  'linak_bed_signal_refresh',
-  'linak_bed_wifi_refresh',
 ]);
 
 class AllBedsDevice extends Homey.Device {
@@ -48,15 +45,6 @@ class AllBedsDevice extends Homey.Device {
     this.registerCapabilityListener('linak_bed_stop', () =>
       this.runOnAll((bed) => bed.stopMovement()));
 
-    // Gruppa har ingen egen radio og viser ingen signalstyrke — knappen er her
-    // fordi det er herfra man styrer begge sengene. Hver seng oppdaterer sin
-    // egen verdi; det er der tallet hører hjemme.
-    this.registerCapabilityListener('linak_bed_signal_refresh', () =>
-      this.runOnAll((bed) => bed.measureSignal()));
-
-    this.registerCapabilityListener('linak_bed_wifi_refresh', () =>
-      this.runOnAll((bed) => bed.measureWifi()));
-
     // Veksler på gruppens egen huskede tilstand, så begge sengene alltid
     // settes LIKT — også om de skulle stå ulikt fra før.
     this.registerCapabilityListener('linak_bed_light', async () => {
@@ -65,7 +53,6 @@ class AllBedsDevice extends Homey.Device {
       await this.setStoreValue('lightOn', next).catch(() => {});
     });
 
-    await this.refreshConnection();
     this.log('Begge senger klar');
   }
 
@@ -73,43 +60,6 @@ class AllBedsDevice extends Homey.Device {
     return this.homey.drivers.getDriver('bed').getDevices();
   }
 
-  async _setConnection(state) {
-    if (!this.hasCapability('linak_bed_connection')) return;
-    await this.setCapabilityValue('linak_bed_connection', state).catch(() => {});
-  }
-
-  // Gruppa har ingen egen tilstand — den er summen av sengene. «Klar» skal kun
-  // stå der så lenge ALLE sengene melder klar; ellers ville gruppa sagt at alt
-  // er i orden mens den ene sengen står i feil.
-  //
-  // Rangeringen er den mest alvorlige tilstanden vinner: en seng i feil er
-  // viktigere å vise enn en som beveger seg.
-  static get STATE_ORDER() {
-    return ['idle', 'busy', 'moving', 'error'];
-  }
-
-  async refreshConnection() {
-    try {
-      const beds = this._beds();
-
-      // Ingen senger å styre er ikke «klar».
-      if (!beds.length) return this._setConnection('error');
-
-      const order = AllBedsDevice.STATE_ORDER;
-      let worst = 'idle';
-      for (const bed of beds) {
-        const state = bed.getCapabilityValue('linak_bed_connection');
-        // En seng uten lesbar tilstand kan ikke bekrefte at den er klar.
-        if (!order.includes(state)) return this._setConnection('error');
-        if (order.indexOf(state) > order.indexOf(worst)) worst = state;
-      }
-
-      return this._setConnection(worst);
-    } catch (error) {
-      this.error('Kunne ikke oppdatere gruppetilstanden', error.message);
-      return undefined;
-    }
-  }
 
   // Kjører på alle senger SAMTIDIG. Køen i BedProxy er per seng, så to senger
   // deler ikke kø — de bruker hver sin tilkoblingsplass på proxyen.
@@ -122,19 +72,14 @@ class AllBedsDevice extends Homey.Device {
     // er appens grunnspråk. Logglinjene under er interne og forblir norske.
     if (!beds.length) throw new Error('No beds have been added yet');
 
-    // Gruppa påstår ikke 'moving': pressMotor løses ved bevegelsesSTART, så
-    // gruppa vet ikke når sengene faktisk er ferdige. Sengene viser sin egen
-    // tilstand; gruppa viser bare feil.
+    // Gruppa viser ingen tilstand selv — sengene gjør det, hver for seg.
     const results = await Promise.allSettled(beds.map((bed) => action(bed)));
 
     const failed = results
       .map((result, index) => ({ result, bed: beds[index] }))
       .filter(({ result }) => result.status === 'rejected');
 
-    if (failed.length === beds.length) {
-      await this.refreshConnection();
-      throw failed[0].result.reason;
-    }
+    if (failed.length === beds.length) throw failed[0].result.reason;
 
     if (failed.length) {
       for (const { result, bed } of failed) {
@@ -144,7 +89,6 @@ class AllBedsDevice extends Homey.Device {
       this.log(`${beds.length - failed.length} av ${beds.length} senger utført`);
     }
 
-    await this.refreshConnection();
     return true;
   }
 

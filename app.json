@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -274,7 +274,8 @@
       },
       "getable": false,
       "setable": true,
-      "uiComponent": "button"
+      "uiComponent": "button",
+      "icon": "/assets/capability-icons/wifi.svg"
     }
   },
   "flow": {
@@ -593,22 +594,22 @@
               "value": true
             },
             {
-              "id": "signalIntervalHours",
+              "id": "signalIntervalMinutes",
               "type": "number",
               "label": {
                 "en": "Measure every",
                 "no": "Mål hver"
               },
               "hint": {
-                "en": "How often the automatic measurements run. Only applies to the measurements switched on above.",
-                "no": "Hvor ofte de automatiske målingene kjører. Gjelder kun målingene som er slått på over."
+                "en": "How often the automatic measurements run. Only applies to the measurements switched on above. Each Bluetooth measurement is a 12 second scan.",
+                "no": "Hvor ofte de automatiske målingene kjører. Gjelder kun målingene som er slått på over. Hver Bluetooth-måling er et skann på 12 sekunder."
               },
-              "value": 6,
-              "min": 1,
-              "max": 168,
+              "value": 360,
+              "min": 5,
+              "max": 10080,
               "units": {
-                "en": "h",
-                "no": "t"
+                "en": "min",
+                "no": "min"
               }
             }
           ]
@@ -672,10 +673,7 @@
         "linak_bed_both_up",
         "linak_bed_both_down",
         "linak_bed_sit_up",
-        "linak_bed_leg_relief",
-        "linak_bed_connection",
-        "linak_bed_signal_refresh",
-        "linak_bed_wifi_refresh"
+        "linak_bed_leg_relief"
       ],
       "platforms": [
         "local"
