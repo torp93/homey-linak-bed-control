@@ -93,5 +93,9 @@
   "1.0.26": {
     "en": "The WiFi signal is measured in dBm, and now says so.",
     "no": "WiFi-signalet måles i dBm, og sier det nå."
+  },
+  "1.0.27": {
+    "en": "Fixes the Refresh button, which reported that a function was missing.",
+    "no": "Retter Oppdater-knappen, som meldte at en funksjon manglet."
   }
 }

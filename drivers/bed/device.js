@@ -135,10 +135,21 @@ class BedDevice extends Homey.Device {
     this._signalTimer = null;
   }
 
-  // Knappen: alt som kan måles, i én omgang. Her venter noen på svaret, så en
-  // feil skal vises i stedet for å gå stille i loggen. Skannet er felles for
-  // Bluetooth-tallet og klar-statusen — å skanne to ganger for det samme ville
-  // vært 24 sekunder til ingen nytte.
+  // Knappen. Homey timer ut en kapabilitetslytter som bruker for lang tid, og
+  // målingen tar 12 sekunder — brukeren fikk «timeout» selv om målingen gikk
+  // helt fint. Samme grep som bevegelsesknappene: kvitter med én gang, og la
+  // jobben gå videre i bakgrunnen.
+  //
+  // Feilen forsvinner ikke: klar-status settes til «Feil» når sengen ikke
+  // svarer, og det er flisen brukeren ser på uansett.
+  async refreshStatus() {
+    this.measureStatus().catch((error) => this.error('Statusmåling feilet', error.message));
+    return true;
+  }
+
+  // Alt som kan måles, i én omgang. Skannet er felles for Bluetooth-tallet og
+  // klar-statusen — å skanne to ganger for det samme ville vært 24 sekunder
+  // til ingen nytte.
   async measureStatus() {
     const entry = await this._scanForBed();
     if (entry) await this._reportSignal(entry.rssi);
