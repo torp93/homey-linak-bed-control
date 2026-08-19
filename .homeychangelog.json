@@ -125,5 +125,9 @@
   "1.0.34": {
     "en": "Stronger outlines on the driver icons, so they hold up at small sizes.",
     "no": "Kraftigere ytterkanter på driverikonene, så de holder i liten størrelse."
+  },
+  "1.0.35": {
+    "en": "Slightly lighter outlines on the driver icons.",
+    "no": "Litt lettere ytterkanter på driverikonene."
   }
 }
