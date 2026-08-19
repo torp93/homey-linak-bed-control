@@ -1,19 +1,14 @@
 <!--
-  Driverikon for en enkelt LINAK-seng: rammen sett skrått fra fotenden, med
-  hodeenden hevet — det er den bevegelsen appen finnes for.
+  Driverikon: én LINAK-seng, sett skrått med hodeenden hevet.
 
-  Kilden er en trasering levert av Thomas (vbdRhx501.svg, 600x450 pt, 764
-  baner). Traseringen tok med stoffteksturen som tusenvis av små prikker; de
-  ble til grå grums i ikonstørrelse. Her er kun de 23 banene som bærer form
-  beholdt, valgt på areal. Det fjernet samtidig produsentlogoen, som ikke
-  hører hjemme i et driverikon.
-
-  Flaten er 960x960 slik Homey krever, og fargen er currentColor — med fast
-  svart ville ikonet blitt usynlig der Homey tegner det mørkt.
+  Trasering levert av Thomas (vbdRhx501.svg, 764 baner). Kun de 23 banene som
+  bærer form er beholdt — resten var stofftekstur som ble grå grums i
+  ikonstørrelse, og en produsentlogo. Strektykkelsen er lagt på etterpå:
+  konturene alene ble for tynne, og retningslinje 1.6 ber om riktig linjebredde.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
-  <g transform="translate(40.0,150.0) scale(1.4667)">
-    <g transform="translate(0.000000,450.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+  <g transform="translate(16.0,132.0) scale(1.5467)">
+    <g transform="translate(0.000000,450.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="currentColor" stroke-width="26" stroke-linejoin="round" stroke-linecap="round">
       <path d="M1800 4369 c-406 -7 -428 -8 -760 -60 -158 -25 -205 -36 -249 -60
 -49 -26 -65 -29 -195 -35 -143 -7 -224 -26 -253 -61 -9 -12 -19 -83 -28 -213
 -2 -19 -7 -47 -13 -61 -14 -34 -37 -351 -37 -499 l0 -115 93 -147 c50 -81 133

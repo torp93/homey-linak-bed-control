@@ -1,16 +1,12 @@
 <!--
-  Driverikon for «Begge senger»: en dobbeltseng med to separate regulerbare
-  rammer, som er nøyaktig det enheten styrer.
+  Driverikon for «Begge senger»: dobbeltseng med to separate regulerbare rammer.
 
-  Kilden er en trasering levert av Thomas (zAgvk01.svg, 600x406 pt). Her er
-  den satt inn på en kvadratisk 960-flate slik Homey krever, sentrert med
-  40 px marg, og fargen er endret fra #000000 til currentColor — med fast
-  svart ville ikonet blitt usynlig der Homey tegner det mørkt.
-
-  Banene selv er urørt.
+  Trasering levert av Thomas (zAgvk01.svg). Alle 117 banene er beholdt — her
+  ligger teksturen inne i de store sammensatte banene, så filtrering på areal
+  ga ingen forskjell. Flaten utnyttes så langt motivets bredde tillater.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
-  <g transform="translate(40.0,182.3) scale(1.4667)">
+  <g transform="translate(16.0,166.0) scale(1.5467)">
     <g transform="translate(0.000000,406.000000) scale(0.050000,-0.050000)" fill="currentColor" stroke="none">
       <path d="M1658 8081 c-1291 -9 -1578 -16 -1605 -38 -28 -24 -32 -67 -29 -290
 3 -180 6 -212 10 -103 4 88 13 174 20 190 7 17 10 41 8 55 -2 14 7 25 20 25

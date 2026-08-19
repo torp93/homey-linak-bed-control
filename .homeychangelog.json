@@ -101,5 +101,9 @@
   "1.0.28": {
     "en": "New driver icons: a drawing of the bed itself, and of the double bed for the group device.",
     "no": "Nye driverikoner: en tegning av selve sengen, og av dobbeltsengen for gruppeenheten."
+  },
+  "1.0.29": {
+    "en": "The driver icons are larger and the single bed has a heavier line, so both read clearly in the device list.",
+    "no": "Driverikonene er større, og sengen har kraftigere strek, så begge leser tydelig i enhetslista."
   }
 }
