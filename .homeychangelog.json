@@ -121,5 +121,9 @@
   "1.0.33": {
     "en": "Bigger driver icons, cropped to the drawing and matched in contrast.",
     "no": "Større driverikoner, beskåret til tegningen og matchet i kontrast."
+  },
+  "1.0.34": {
+    "en": "Stronger outlines on the driver icons, so they hold up at small sizes.",
+    "no": "Kraftigere ytterkanter på driverikonene, så de holder i liten størrelse."
   }
 }
