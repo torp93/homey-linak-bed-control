@@ -105,5 +105,9 @@
   "1.0.29": {
     "en": "The driver icons are larger and the single bed has a heavier line, so both read clearly in the device list.",
     "no": "Driverikonene er større, og sengen har kraftigere strek, så begge leser tydelig i enhetslista."
+  },
+  "1.0.30": {
+    "en": "A more detailed drawing of the bed, matching the one used for the group device.",
+    "no": "En mer detaljert tegning av sengen, som matcher den gruppeenheten bruker."
   }
 }
