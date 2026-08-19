@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -653,7 +653,12 @@
           "title": {
             "en": "WiFi signal",
             "no": "WiFi-signal"
-          }
+          },
+          "units": {
+            "en": "dBm",
+            "no": "dBm"
+          },
+          "decimals": 0
         }
       }
     },
