@@ -1,15 +1,14 @@
 <!--
   Driverikon: dobbeltseng med to separate regulerbare rammer.
 
-  Trasering levert av Thomas, ryddet for tekstur. Banene er urørt, og
-  strektykkelsen er kildens egen — det er denne sengen den andre matches mot.
+  Trasering levert av Thomas, ryddet for tekstur. Banene og strektykkelsen er
+  kildens egne — det er dette ikonet enkeltsengen matches mot.
 
-  960x960 slik Homey krever, 16 px marg, og currentColor i stedet for fast
-  svart — ellers blir ikonet usynlig der Homey tegner det mørkt.
+  960x960, currentColor, Inkscape-navnerom strippet.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
   <g fill="currentColor">
-    <svg x="16.0" y="166.0" width="928.0" height="627.9" viewBox="0 0 600 406">
+    <svg x="6.0" y="159.9" width="948.0" height="640.3" viewBox="1.0 1.1 598.3 404.1">
   <defs
      id="defs117" />
   

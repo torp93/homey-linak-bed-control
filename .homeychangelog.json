@@ -113,5 +113,13 @@
   "1.0.31": {
     "en": "Cleaner drawings for both driver icons, matched to the same line weight.",
     "no": "Renere tegninger på begge driverikonene, med samme strekvekt."
+  },
+  "1.0.32": {
+    "en": "The two driver icons now have the same contrast.",
+    "no": "De to driverikonene har nå samme kontrast."
+  },
+  "1.0.33": {
+    "en": "Bigger driver icons, cropped to the drawing and matched in contrast.",
+    "no": "Større driverikoner, beskåret til tegningen og matchet i kontrast."
   }
 }

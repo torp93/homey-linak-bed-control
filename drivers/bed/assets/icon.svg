@@ -2,16 +2,17 @@
   Driverikon: én LINAK-seng, sett skrått med hodeenden hevet.
 
   Trasering levert av Thomas, ryddet for stofftekstur. Banene er urørt.
-  8 px kontur er lagt på: kilden er 2400 enheter bred og krympes til 0,39x,
-  så strekene ble fire ganger tynnere enn dobbeltsengens, som forstørres
-  1,55x fra 600. Uten den var sengen synlig lysere enn gruppeikonet.
+  Beskåret til tegningens faktiske ramme — kilden hadde 11 % luft i bredden —
+  og 20 px kontur for å matche gruppeikonets kontrast. Målt gjennomsnittlig
+  svarthet ved 96 px: 10,0 % mot gruppeikonets 10,2 %.
 
-  960x960 slik Homey krever, 16 px marg, og currentColor i stedet for fast
-  svart — ellers blir ikonet usynlig der Homey tegner det mørkt.
+  960x960, currentColor: med fast svart ville ikonet blitt usynlig der Homey
+  tegner det mørkt. Inkscapes egne navnerom er strippet — de gjorde SVG-en
+  ugyldig som XML, og da tegnes den ikke i det hele tatt.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
-  <g fill="currentColor" stroke="currentColor" stroke-width="20.7" stroke-linejoin="round">
-    <svg x="16.0" y="132.0" width="928.0" height="696.0" viewBox="0 0 2400 1800">
+  <g fill="currentColor" stroke="currentColor" stroke-width="44.9" stroke-linejoin="round">
+    <svg x="6.0" y="93.2" width="948.0" height="773.6" viewBox="86.6 41.3 2127.5 1736.0">
   <defs
      id="defs3067" />
   
