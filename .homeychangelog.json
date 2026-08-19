@@ -109,5 +109,9 @@
   "1.0.30": {
     "en": "A more detailed drawing of the bed, matching the one used for the group device.",
     "no": "En mer detaljert tegning av sengen, som matcher den gruppeenheten bruker."
+  },
+  "1.0.31": {
+    "en": "Cleaner drawings for both driver icons, matched to the same line weight.",
+    "no": "Renere tegninger på begge driverikonene, med samme strekvekt."
   }
 }
