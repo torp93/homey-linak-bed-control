@@ -95,10 +95,24 @@
       the board joins your network. Then add a bed in the Homey app: pairing asks
       for the board's IP address, and the port is <strong>6053</strong>.
       <br><br>
-      <strong>Finding the IP:</strong> click <strong>Logs &amp; Console</strong>
-      here (the board prints <code>IP Address: …</code> when it connects), or look
-      it up in your router's client list.
+      <strong>Finding the IP</strong> — any of these works:
     </div>
+    <ol>
+      <li>Right after entering WiFi, the installer offers <strong>Visit Device</strong>. That opens the board's status page, which shows its IP address.</li>
+      <li>Open <code>http://linak-bed-proxy.local</code> in a browser on the same network. Not every network resolves <code>.local</code> names; if it does not open, use one of the others.</li>
+      <li>Look for <code>linak-bed-proxy</code> in your router's client list.</li>
+      <li>Click <strong>Logs &amp; Console</strong> here; the board prints <code>IP Address: …</code> when it connects.</li>
+    </ol>
+
+    <h2>The status page</h2>
+    <p>
+      The board serves a small diagnostics page at its IP address. It shows the
+      WiFi signal, the IP and network it is on, uptime and free memory, and has
+      buttons to restart it or clear its Bluetooth cache. If the Homey app loses
+      the bed, this page tells you whether the board itself is still up. Clearing
+      the Bluetooth cache also forgets the WiFi, so set it again from this page's
+      installer afterwards.
+    </p>
 
     <div class="note">
       <strong>Tip: give the board a fixed IP.</strong> In your router, find

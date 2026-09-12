@@ -40,16 +40,17 @@
         title: 'Before you start',
         lead: 'Homey does not talk to the bed directly. It goes through an ESP32 running '
             + 'ESPHome as a Bluetooth proxy, so a few things need to be in place.',
-        s1: 'Flash an ESP32 with ESPHome. A complete, tested configuration is on GitHub: '
-          + 'github.com/torp93/homey-linak-bed-control, as esphome/linak-bed-proxy.yaml.',
-        s2: 'Before flashing, put your WiFi name and password into ESPHome’s secrets.yaml '
-          + 'as wifi_ssid and wifi_password. The board has no screen and no buttons, so '
-          + 'without them it will never get online.',
+        s1: 'Flash an ESP32 from your browser at torp93.github.io/homey-linak-bed-control. '
+          + 'Click Install, pick the USB port and enter your WiFi on that page. No other '
+          + 'software is needed, and classic ESP32, C3 and S3 boards all work.',
+        s2: 'Use Chrome or Edge on a computer, and a USB cable that carries data, not just '
+          + 'power. The ESP32 needs a 2.4 GHz WiFi network; it cannot join 5 GHz.',
         s3: 'Place the ESP32 a few metres from the bed, with as little concrete and metal '
           + 'in between as possible. The bed transmits weakly, and its control box sits '
           + 'under the frame.',
-        s4: 'The next screen asks for the address of the ESP32. Use a fixed IP or a DHCP '
-          + 'reservation so it does not move.',
+        s4: 'The next screen asks for the address of the ESP32. The install page shows it '
+          + 'when the board connects, and it is also on the board’s own status page. Use '
+          + 'a fixed IP or a DHCP reservation so it does not move.',
         s5: 'The bed accepts only one controller at a time. While Homey holds the '
           + 'connection open, the remote will not respond.',
         note: 'Once that is done you can continue, and Homey will look for the bed.',
@@ -58,17 +59,18 @@
         title: 'Før du starter',
         lead: 'Homey snakker ikke direkte med sengen. Den går via en ESP32 som kjører '
             + 'ESPHome som Bluetooth-proxy, så noen ting må være på plass.',
-        s1: 'Flash en ESP32 med ESPHome. En komplett, testet konfigurasjon ligger på '
-          + 'GitHub: github.com/torp93/homey-linak-bed-control, som '
-          + 'esphome/linak-bed-proxy.yaml.',
-        s2: 'Før du flasher må du legge inn WiFi-navn og passord i ESPHome sin '
-          + 'secrets.yaml som wifi_ssid og wifi_password. Kortet har verken skjerm '
-          + 'eller knapper, så uten dette kommer det aldri på nett.',
+        s1: 'Flash en ESP32 rett fra nettleseren på torp93.github.io/homey-linak-bed-control. '
+          + 'Trykk Install, velg USB-porten og skriv inn WiFi på den siden. Ingen annen '
+          + 'programvare trengs, og klassisk ESP32, C3 og S3 fungerer alle.',
+        s2: 'Bruk Chrome eller Edge på en datamaskin, og en USB-kabel som overfører data, '
+          + 'ikke bare strøm. ESP32-en trenger et 2,4 GHz-nett; den kan ikke koble seg '
+          + 'til 5 GHz.',
         s3: 'Plasser ESP32-en noen få meter fra sengen, med minst mulig betong og '
           + 'metall imellom. Sengen sender svakt, og styringsboksen sitter under '
           + 'rammen.',
-        s4: 'Neste skjerm spør etter adressen til ESP32-en. Bruk fast IP eller '
-          + 'DHCP-reservasjon så den ikke flytter seg.',
+        s4: 'Neste skjerm spør etter adressen til ESP32-en. Installasjonssiden viser den '
+          + 'når kortet kobler seg til, og den står også på kortets egen statusside. Bruk '
+          + 'fast IP eller DHCP-reservasjon så den ikke flytter seg.',
         s5: 'Sengen godtar bare én styreenhet om gangen. Mens Homey har tilkoblingen '
           + 'åpen, svarer ikke fjernkontrollen.',
         note: 'Når det er gjort, kan du gå videre, så leter Homey etter sengen.',

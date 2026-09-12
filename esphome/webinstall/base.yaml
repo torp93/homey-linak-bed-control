@@ -13,6 +13,9 @@
 # WiFi is not baked in: improv_serial lets the browser installer send the
 # credentials over USB after flashing. No captive_portal (heap cost on the C3),
 # and the logger keeps a serial so improv_serial can talk over it.
+#
+# Bonding with the bed needs no config here: the Homey app sends ESPHome's PAIR
+# request over the native API on every connection.
 
 esphome:
   name: linak-bed-proxy
@@ -37,6 +40,15 @@ wifi:
   power_save_mode: NONE   # avoids WiFi/BLE contention on the shared 2.4 GHz radio
 
 improv_serial:
+
+# Diagnostics page at http://<ip>/ or http://linak-bed-proxy.local/, and the
+# "Visit Device" link at the end of the browser install. Version 3 loads its
+# assets from outside the board, which keeps the heap cost low: measured around
+# 88 KB Max Free Block on a C3 with this config, well above the ~40 KB that GATT
+# needs. Use version 2 if the board must work with no internet access at all.
+web_server:
+  port: 80
+  version: 3
 
 esp32_ble_tracker:
   id: ble_tracker_id
@@ -78,3 +90,14 @@ sensor:
 
   - platform: uptime
     name: "Bed Proxy Uptime"
+
+# The IP is what a new user needs next — the Homey app asks for it when a bed is
+# paired. This puts it on the status page and in the log. Text sensors are a
+# different API message type from the sensors above, so the app's WiFi signal
+# lookup does not see them.
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Bed Proxy IP Address"
+    ssid:
+      name: "Bed Proxy WiFi Network"

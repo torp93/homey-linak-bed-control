@@ -129,5 +129,9 @@
   "1.0.35": {
     "en": "Slightly lighter outlines on the driver icons.",
     "no": "Litt lettere ytterkanter på driverikonene."
+  },
+  "1.0.36": {
+    "en": "Setting up the Bluetooth proxy is now done from a web page: flash the ESP32 and enter your WiFi in the browser, with no other software. Pairing points you there.",
+    "no": "Bluetooth-proxyen settes nå opp fra en nettside: flash ESP32-en og skriv inn WiFi i nettleseren, uten annen programvare. Paringen viser deg dit."
   }
 }
