@@ -1,0 +1,9 @@
+# Classic ESP32 (e.g. an ESP32-WROOM devkit with a CP2102/CH340 USB chip).
+# BLE 4.2 hardware with 520 KB SRAM, so no BLE 5.0 sdkconfig tuning is needed.
+packages:
+  base: !include base.yaml
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf

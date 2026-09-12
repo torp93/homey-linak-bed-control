@@ -1,0 +1,116 @@
+name: Build proxy firmware and publish install page
+
+# Deploys the one-click browser install page to GitHub Pages. New users flash
+# from the browser and enter WiFi there (improv); esp-web-tools picks the build
+# matching whatever ESP32 is plugged in.
+#
+# The firmware (a 10-15 min compile of three chip families) depends ONLY on the
+# ESPHome configs in esphome/webinstall/. It is cached on a hash of those files,
+# so changes to the page or manifest text (webinstall/**) reuse the cached
+# firmware and skip the compile. The firmware rebuilds only when a config
+# actually changes (or the cache key version below is bumped).
+#
+# Pages must be enabled once by hand: repo Settings -> Pages -> Source:
+# "GitHub Actions". The workflow token can deploy but not create the site, so
+# configure-pages is deliberately run without `enablement: true`.
+#
+# The paths filter means an empty commit does NOT trigger this; change a file
+# under one of the paths, or use "Run workflow" (workflow_dispatch).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - esphome/webinstall/**
+      - webinstall/**
+      - .github/workflows/build-firmware.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Bump the version segment to force a rebuild (e.g. to pick up a newer
+      # ESPHome). A page/text change does not touch esphome/webinstall/, so the
+      # key is unchanged and the compile is skipped.
+      - name: Restore cached firmware
+        id: fwcache
+        uses: actions/cache@v4
+        with:
+          path: linak-bed-proxy-*
+          key: firmware-v1-${{ hashFiles('esphome/webinstall/**') }}
+
+      - name: Build ESP32 (classic, e.g. WROOM)
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        uses: esphome/build-action@v7.0.0
+        with:
+          yaml-file: esphome/webinstall/esp32.yaml
+          version: latest
+          complete-manifest: true
+
+      - name: Build ESP32-C3
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        uses: esphome/build-action@v7.0.0
+        with:
+          yaml-file: esphome/webinstall/esp32c3.yaml
+          version: latest
+          complete-manifest: true
+
+      - name: Build ESP32-S3
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        uses: esphome/build-action@v7.0.0
+        with:
+          yaml-file: esphome/webinstall/esp32s3.yaml
+          version: latest
+          complete-manifest: true
+
+      # Runs every time, cached firmware or fresh: this is what applies page and
+      # manifest changes on the fast path. Globbing the build folders means it
+      # does not depend on the build steps having run.
+      - name: Assemble the install site
+        run: |
+          mkdir -p site/firmware
+          cp webinstall/index.html site/index.html
+          manifests=()
+          for dir in linak-bed-proxy-*; do
+            [ -d "$dir" ] || continue
+            cp "$dir"/*.bin site/firmware/
+            manifests+=("$dir/manifest.json")
+          done
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "No firmware found — cache miss and no build ran"; exit 1
+          fi
+          node webinstall/merge-manifests.mjs "${manifests[@]}" > site/firmware/manifest.json
+          echo "Combined manifest:"
+          cat site/firmware/manifest.json
+          echo "Published firmware files:"
+          ls -R site/firmware
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

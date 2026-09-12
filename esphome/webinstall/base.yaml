@@ -1,0 +1,80 @@
+# Shared browser-install config for the LINAK Bed proxy.
+#
+# Everything except the chip-specific esp32: block lives here and is pulled into
+# each per-chip file via `packages:`. Those files (esp32.yaml, esp32c3.yaml,
+# esp32s3.yaml) are compiled by .github/workflows/build-firmware.yml into one
+# install page whose manifest lists every chip, so esp-web-tools flashes the
+# build that matches whatever board is plugged in.
+#
+# This is the easy path for new users. The hand-tuned config with WiFi, fixed IP
+# and web_server baked in is esphome/linak-bed-proxy.yaml, and it stays the
+# advanced path — nothing here changes it.
+#
+# WiFi is not baked in: improv_serial lets the browser installer send the
+# credentials over USB after flashing. No captive_portal (heap cost on the C3),
+# and the logger keeps a serial so improv_serial can talk over it.
+
+esphome:
+  name: linak-bed-proxy
+  friendly_name: LINAK Bed Proxy
+  project:
+    name: torp93.linak_bed_proxy
+    version: "1.0"
+
+logger:
+  level: INFO
+
+api:
+  # No reboot when no client connects. The Homey app connects on the first
+  # button press, not at startup; with the default 15 min watchdog the board
+  # rebooted every quarter of an hour all night while nobody touched the bed.
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+
+wifi:
+  power_save_mode: NONE   # avoids WiFi/BLE contention on the shared 2.4 GHz radio
+
+improv_serial:
+
+esp32_ble_tracker:
+  id: ble_tracker_id
+  scan_parameters:
+    active: true
+    interval: 320ms
+    window: 200ms
+
+bluetooth_proxy:
+  active: true
+  connection_slots: 2   # two beds = two simultaneous GATT connections
+
+button:
+  - platform: restart
+    name: "Restart Bed Proxy"
+
+  # Wipes NVS, including the NimBLE GATT cache. A plain restart does not: NVS
+  # survives it. Note that this also forgets the WiFi sent over improv, so the
+  # board has to be given WiFi again from the install page afterwards.
+  - platform: factory_reset
+    name: "Clear Bluetooth Cache"
+
+debug:
+
+sensor:
+  # The Homey app reads this one for its WiFi signal tile, by device class
+  # signal_strength. Keep the platform; the name may change.
+  - platform: wifi_signal
+    name: "Bed Proxy WiFi Signal"
+    update_interval: 60s
+
+  # Heap is the number that matters on this board. Below ~25 KB Max Free Block,
+  # GATT turns unreliable in a confusing way: connecting works, reads time out.
+  - platform: debug
+    free:
+      name: "Bed Proxy Free Heap"
+    block:
+      name: "Bed Proxy Max Free Block"
+
+  - platform: uptime
+    name: "Bed Proxy Uptime"

@@ -1,0 +1,11 @@
+# ESP32-S3. Native USB. esp-idf + BLE 5.0 disabled like the C3.
+packages:
+  base: !include base.yaml
+
+esp32:
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: n
+      CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y

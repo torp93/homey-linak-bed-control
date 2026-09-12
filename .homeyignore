@@ -16,3 +16,9 @@ README.md
 
 # ESPHome-konfigurasjonen beholdes bevisst: den er en del av oppsettet appen
 # beskriver, og paringsvisningen viser til den ved navn.
+
+# Nettleserinstallasjonen bygges og publiseres av GitHub Actions til Pages.
+# Ingenting av det kan nås fra en Homey, så det har ingenting i pakken å gjøre.
+esphome/webinstall/
+webinstall/
+.github/

@@ -65,6 +65,14 @@ link fails in confusing ways: connection succeeds, then GATT times out.
 
 ### 1. Flash the ESP32
 
+Easiest path: **[flash it from your browser](https://torp93.github.io/homey-linak-bed-control/)**.
+Plug the board in over USB, click Install, pick the serial port and enter your
+WiFi on the page — no ESPHome, Python or command line. It needs Chrome or Edge
+on a computer, and works with classic ESP32, C3 and S3 boards.
+
+The rest of this section is the advanced path: building the config yourself,
+with WiFi and a fixed IP baked in.
+
 [`esphome/linak-bed-proxy.yaml`](esphome/linak-bed-proxy.yaml) is the config
 this app is developed against. It references three values that are deliberately
 not in the file — put them in `secrets.yaml`, next to the config — [`secrets.yaml.example`](esphome/secrets.yaml.example) is there to copy:

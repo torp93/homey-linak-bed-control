@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!-- LINAK Bed proxy install page. Served from GitHub Pages. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Install the LINAK Bed proxy</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛏️</text></svg>" />
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+      line-height: 1.55;
+      color: #1a1c1f;
+      background: #f4f6f8;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 32px 20px 64px; }
+    header { border-bottom: 3px solid #004B76; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { font-size: 1.5em; margin: 0 0 4px; }
+    .sub { opacity: 0.7; margin: 0; }
+    h2 { font-size: 1.05em; margin: 28px 0 8px; }
+    ol { padding-left: 20px; }
+    li { margin: 6px 0; }
+    .cta { text-align: center; margin: 28px 0; }
+    /* Styled directly, not through esp-web-tools' --esp-tools-* variables: those
+       left the default button blank. */
+    .install-btn {
+      background: #004B76; color: #fff; border: none; border-radius: 24px;
+      padding: 13px 30px; font-size: 1em; font-weight: 600; cursor: pointer;
+    }
+    .install-btn:hover { background: #003a5c; }
+    .unsupported { display: inline-block; max-width: 440px; color: #c0392b; font-size: 0.9em; }
+    .note { font-size: 0.9em; background: #fff; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px; padding: 12px 16px; margin: 18px 0; }
+    .browser { font-size: 0.88em; opacity: 0.75; text-align: center; margin-top: 8px; }
+    a { color: #0b6aa3; }
+    code { font-size: 0.92em; }
+    footer { margin-top: 40px; font-size: 0.85em; opacity: 0.7; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e8e9ec; background: #17181c; }
+      .note { background: #1f2126; border-color: rgba(255,255,255,0.12); }
+      a { color: #5fb0e0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>LINAK Bed proxy</h1>
+      <p class="sub">Flash the Bluetooth proxy for the Homey app, straight from your browser.</p>
+    </header>
+
+    <p>
+      The Homey <strong>LINAK Bed</strong> app talks to your adjustable bed through a
+      small ESP32 board placed near it. This page puts the firmware on that board
+      for you. No ESPHome, no Python, no command line.
+    </p>
+
+    <h2>You need</h2>
+    <ol>
+      <li>An <strong>ESP32</strong> board — classic (WROOM), C3 or S3 all work.</li>
+      <li>A USB cable that carries <strong>data</strong>, not just power.</li>
+      <li><strong>Chrome</strong> or <strong>Edge</strong> on a computer (Safari and Firefox cannot flash over USB).</li>
+      <li>Your <strong>2.4 GHz</strong> WiFi name and password. The ESP32 cannot join a 5 GHz network.</li>
+    </ol>
+
+    <div class="cta">
+      <esp-web-install-button manifest="firmware/manifest.json">
+        <button slot="activate" class="install-btn">Install proxy firmware</button>
+        <span slot="unsupported" class="unsupported">Your browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span>
+        <span slot="not-allowed" class="unsupported">This page must be opened over https. Use the install link from the app's README.</span>
+      </esp-web-install-button>
+      <p class="browser">Plug the board in, click Install, pick the serial port, then enter your WiFi when asked.</p>
+    </div>
+
+    <h2>If the board is not listed, or flashing will not start</h2>
+    <p>
+      Some boards need to be put into <strong>download mode</strong> by hand the
+      first time (classic ESP32-WROOM boards especially):
+    </p>
+    <ol>
+      <li>Hold the <strong>BOOT</strong> button (sometimes labelled <strong>IO0</strong> or <strong>IO9</strong>).</li>
+      <li>While holding it, tap <strong>RESET</strong> (or, if there is no RESET button, plug the USB cable in).</li>
+      <li>Release BOOT, then click <strong>Install</strong> and pick the port.</li>
+    </ol>
+    <p>
+      Boards with native USB are often detected straight away and skip this. Only
+      reach for it if nothing shows up in the port list or the install stalls at
+      the start.
+    </p>
+
+    <div class="note">
+      After flashing, the installer asks for your WiFi over the same USB cable and
+      the board joins your network. Then add a bed in the Homey app: pairing asks
+      for the board's IP address, and the port is <strong>6053</strong>.
+      <br><br>
+      <strong>Finding the IP:</strong> click <strong>Logs &amp; Console</strong>
+      here (the board prints <code>IP Address: …</code> when it connects), or look
+      it up in your router's client list.
+    </div>
+
+    <div class="note">
+      <strong>Tip: give the board a fixed IP.</strong> In your router, find
+      <code>linak-bed-proxy</code> and set a <strong>DHCP reservation</strong>
+      (sometimes called a static lease) for it. Otherwise its address can change
+      and the Homey app loses the proxy until you update the address — the
+      app's Repair screen on each bed lets you do that without re-pairing.
+    </div>
+
+    <h2>Placement</h2>
+    <p>
+      Put the board within a few metres of the bed, with as little concrete and
+      metal in between as possible. The bed transmits weakly and its control box
+      sits under the frame, so Bluetooth range is the most common source of
+      trouble. One board can serve two beds.
+    </p>
+
+    <footer>
+      The full guide, and the advanced configuration with WiFi and a fixed IP
+      baked in, are in the
+      <a href="https://github.com/torp93/homey-linak-bed-control#1-flash-the-esp32">setup documentation</a>.
+      This page is not affiliated with LINAK.
+    </footer>
+  </div>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</body>
+</html>
