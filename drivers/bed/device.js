@@ -359,6 +359,17 @@ class BedDevice extends Homey.Device {
     };
   }
 
+  // Adressetypen fra paringen er et gjett når annonseringen ikke oppga den.
+  // Fant proxyen ut at den motsatte virker, skal den lagres — ellers koster
+  // hver eneste oppkobling et bomforsøk først.
+  async _rememberAddressType(result) {
+    const used = result && result.addressType;
+    if (used === undefined || used === null || used === this._addressType) return;
+    this._addressType = used;
+    await this.setStoreValue('addressType', used).catch(() => {});
+    this.log(`Adressetype rettet til ${used}`);
+  }
+
   async _rememberHandles(result) {
     if (this._storedHandles || !result || !result.handles) return;
     this._storedHandles = result.handles;
@@ -421,6 +432,7 @@ class BedDevice extends Homey.Device {
 
       this.log(`${command}: ${result.repeats} skrivinger, stoppet av ${result.stoppedBy || 'kommando'}, RSSI ${result.rssi}`);
       await this._rememberHandles(result);
+      await this._rememberAddressType(result);
       await this._reportSignal(result.rssi);
       await this._markAvailable();
       await this._setConnection('idle');
@@ -459,6 +471,7 @@ class BedDevice extends Homey.Device {
       const result = await this._proxy().sendCommand(this._mac, on ? 'lightOn' : 'lightOff',
         this._commandOptions());
       await this._rememberHandles(result);
+      await this._rememberAddressType(result);
       await this._reportSignal(result.rssi);
       // Sengen rapporterer ikke lysstatus, og knappen er ikke lesbar —
       // tilstanden holdes i store for Flow-betingelsen «lyset er på».

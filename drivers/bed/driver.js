@@ -46,6 +46,17 @@ class BedDriver extends Homey.Driver {
       const devices = await this.onPairListDevices();
       return { devices, seen: this._lastSeen, known: this._lastKnown };
     });
+
+    // Paringen koblet aldri til sengen — den lyttet bare etter annonseringer.
+    // Da kunne en seng legges til uten problemer og likevel nekte all styring,
+    // fordi det tre minutter lange vinduet etter strømbruddet var ute før
+    // brukeren rakk første knappetrykk. Nå prøves en ekte tilkobling mens
+    // brukeren fortsatt står ved sengen, og feilen kommer der den kan rettes.
+    session.setHandler('probe_bed', async ({ mac, addressType }) => {
+      const result = await this.homey.app.getProxy().probe(mac, { addressType });
+      this.log('Paringsprobe ok', { mac, rssi: result.rssi, addressType: result.addressType });
+      return result;
+    });
   }
 
   // Reparasjon. I motsetning til onPair får denne enheten inn, så knappene når

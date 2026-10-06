@@ -440,6 +440,64 @@ test('sletting av en seng som står stille rører ikke den andre', async () => {
   assert.equal((await b).stoppedBy, 'tidsgrense');
 });
 
+// Adressetypen er et gjett når annonseringen ikke oppgir den, og et bomgjett
+// ser nøyaktig ut som «sengen er utenfor paringsvinduet». Derfor ett forsøk til.
+
+test('tilkobling avvist med 133 prøves på nytt med motsatt adressetype', async () => {
+  const { proxy, client } = makeProxy();
+  const tried = [];
+  client.bleConnect = async (mac, options) => {
+    tried.push(options.addressType);
+    if (tried.length === 1) {
+      const error = new Error('BLE-tilkobling avvist');
+      error.bleError = 133;
+      throw error;
+    }
+    return { mtu: 23 };
+  };
+
+  const result = await proxy.sendCommand(MAC, 'lightOn', { ...OPTS, addressType: 1 });
+  assert.deepEqual(tried, [1, 0], 'først den lagrede typen, så den motsatte');
+  assert.equal(result.addressType, 0, 'typen som virket rapporteres tilbake');
+});
+
+test('andre tilkoblingsfeil prøves ikke på nytt', async () => {
+  const { proxy, client } = makeProxy();
+  let calls = 0;
+  client.bleConnect = async () => {
+    calls++;
+    const error = new Error('proxyen er nede');
+    error.bleError = 5;
+    throw error;
+  };
+
+  await assert.rejects(proxy.sendCommand(MAC, 'lightOn', OPTS), /proxyen er nede/);
+  assert.equal(calls, 1, 'ingen blind gjentakelse på feil som ikke handler om adressetype');
+});
+
+test('probe kobler til, bonder og legger på — uten å bevege sengen', async () => {
+  const { proxy, client } = makeProxy();
+  const result = await proxy.probe(MAC, { addressType: 1, storedHandles: HANDLES });
+
+  assert.equal(client.count('bleConnect'), 1);
+  assert.equal(client.count('blePair'), 1, 'bondingen er selve beviset på at sengen slipper oss inn');
+  assert.equal(client.count('bleDisconnect'), 1, 'økten legges på igjen');
+  assert.equal(client.writes.length, 0, 'ingen skriving = sengen rører seg ikke');
+  assert.equal(client.count('advAcquire'), client.count('advRelease'), 'balansert refcount');
+  assert.equal(result.addressType, 1);
+});
+
+test('probe lar feilen fra sengen slippe gjennom til paringen', async () => {
+  const { proxy, client } = makeProxy();
+  client.bleConnect = async () => {
+    const error = new Error('The bed did not accept the connection (error 133)');
+    error.bleError = 133;
+    throw error;
+  };
+
+  await assert.rejects(proxy.probe(MAC, { addressType: 1 }), /did not accept/);
+});
+
 test('død dvele-økt gjenåpnes automatisk med ett nytt forsøk', async () => {
   const { proxy, client } = makeProxy();
   // Første kommando etablerer økten og lar den dvele.

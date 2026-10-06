@@ -62,6 +62,15 @@
                 + 'If it took too long, unplug it, wait two full minutes, plug it back in and '
                 + 'search again. Also check that the ESP32 is close to the bed.',
         failedTitle: 'The search failed',
+        checking: 'Checking the bed',
+        checkingSub: 'Connecting once, to make sure the bed accepts it. It will not move.',
+        probeFailedTitle: 'The bed did not accept the connection',
+        probeHint: 'Unplug the bed, wait two full minutes, plug it back in, and press the bed '
+                 + 'again here within three minutes. Also close any phone app connected to the bed.',
+        addAnyway: 'Add it anyway',
+        signal: (n) => 'Bluetooth signal ' + n + ' dBm.',
+        signalWeak: (n) => 'Bluetooth signal ' + n + ' dBm — that is weak. Move the ESP32 closer '
+                         + 'to the bed if commands turn unreliable.',
       },
       no: {
         searching: 'Søker etter sengen',
@@ -88,6 +97,16 @@
                 + 'minutter, sett det inn igjen og søk på nytt. Sjekk også at ESP32-en '
                 + 'står nær sengen.',
         failedTitle: 'Søket feilet',
+        checking: 'Sjekker sengen',
+        checkingSub: 'Kobler til én gang for å se at sengen godtar det. Den beveger seg ikke.',
+        probeFailedTitle: 'Sengen godtok ikke tilkoblingen',
+        probeHint: 'Trekk ut støpselet, vent to hele minutter, sett det inn igjen, og trykk på '
+                 + 'sengen her igjen innen tre minutter. Lukk også eventuelle telefonapper som '
+                 + 'er koblet til sengen.',
+        addAnyway: 'Legg den til likevel',
+        signal: (n) => 'Bluetooth-signal ' + n + ' dBm.',
+        signalWeak: (n) => 'Bluetooth-signal ' + n + ' dBm — det er svakt. Flytt ESP32-en '
+                         + 'nærmere sengen hvis kommandoene blir ustabile.',
       },
     };
 
@@ -118,12 +137,9 @@
       noteEl.className = cls || '';
     }
 
-    function add(device) {
-      listEl.innerHTML = '';
-      retryEl.style.display = 'none';
+    function create(device) {
       titleEl.textContent = T.adding;
       subtitleEl.textContent = device.name;
-      note('');
 
       Homey.createDevice(device, (error) => {
         if (error) {
@@ -132,6 +148,43 @@
           return;
         }
         Homey.done();
+      });
+    }
+
+    // Prøv en EKTE tilkobling før enheten opprettes. Annonseringen beviser bare
+    // at sengen finnes; det er denne som avgjør om den lar seg styre. Feiler
+    // den, står brukeren fortsatt ved sengen og kan ta strømbruddet på nytt —
+    // i stedet for å oppdage det dagen etter, med vinduet for lengst ute.
+    function add(device) {
+      listEl.innerHTML = '';
+      retryEl.style.display = 'none';
+      titleEl.textContent = T.checking;
+      subtitleEl.textContent = T.checkingSub;
+      note('');
+
+      const store = device.store || {};
+      Homey.emit('probe_bed', { mac: store.mac, addressType: store.addressType }, (error, info) => {
+        if (error) {
+          titleEl.textContent = T.probeFailedTitle;
+          subtitleEl.textContent = '';
+          note(String(error.message || error) + ' ' + T.probeHint, 'bad');
+
+          // Å legge til likevel er et gyldig valg: adressen er riktig, og
+          // Reparer-skjermen kan nullstille tilkoblingen senere.
+          const anyway = document.createElement('button');
+          anyway.className = 'retry';
+          anyway.textContent = T.addAnyway;
+          anyway.addEventListener('click', () => { note(''); create(device); });
+          listEl.appendChild(anyway);
+          retryEl.style.display = '';
+          return;
+        }
+
+        const rssi = info && info.rssi;
+        if (typeof rssi === 'number' && isFinite(rssi)) {
+          note(rssi < -75 ? T.signalWeak(rssi) : T.signal(rssi), rssi < -75 ? 'bad' : 'ok');
+        }
+        create(device);
       });
     }
 
