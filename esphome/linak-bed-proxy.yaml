@@ -117,6 +117,19 @@ sensor:
   - platform: uptime
     name: "Bed Proxy Uptime"
 
+# IP-en står ikke noe annet sted på statussiden, og det er den appen spør etter
+# når en seng pares eller repareres. Lagt til 06.10.2026, etter at siden viste
+# alt annet enn adressen man faktisk trengte.
+#
+# Tekstsensorer er en annen meldingstype i API-et enn sensorene over, så appens
+# oppslag av WiFi-signalet ser dem ikke.
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Bed Proxy IP Address"
+    ssid:
+      name: "Bed Proxy WiFi Network"
+
 # ---------------------------------------------------------------------------
 # web_server slått på 2026-08-14 etter måling: Max Free Block lå på 94 KB uten,
 # og GATT blir først upålitelig under ~25 KB (trygg grense ~40 KB). Marginen
