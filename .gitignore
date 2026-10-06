@@ -5,3 +5,4 @@ env.json
 
 # ESPHome secrets — the example file is the one that ships
 esphome/secrets.yaml
+

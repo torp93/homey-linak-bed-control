@@ -1,0 +1,20 @@
+# Thomas' eget nett. Denne fila er gitignorert med vilje.
+#
+# linak-bed-proxy.yaml i repoet har 192.168.1.50 som plassholder, med
+# kommentaren «tilpass ditt nett». Den skal fortsette å være en mal, så
+# overstyringen for dette huset ligger her i stedet for i den.
+#
+# Bygg og flash med DENNE fila:
+#   esphome run esphome/linak-bed-proxy.local.yaml
+
+packages:
+  base: !include linak-bed-proxy.yaml
+
+wifi:
+  manual_ip:
+    static_ip: 192.168.10.14
+    gateway: 192.168.10.1
+    subnet: 255.255.255.0
+    dns1: 192.168.10.1
+
+  use_address: 192.168.10.14
