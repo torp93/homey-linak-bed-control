@@ -137,5 +137,9 @@
   "1.0.37": {
     "en": "Pairing now connects to the bed before finishing, so a bed that is not in its pairing window is caught while you are still standing by it. When the bed refuses a connection the app explains what to do, and it retries with the other Bluetooth address type.",
     "no": "Paringen kobler nå til sengen før den fullfører, så en seng som ikke står i paringsvinduet fanges mens du fortsatt står ved den. Nekter sengen, forklarer appen hva du skal gjøre, og den prøver på nytt med den andre Bluetooth-adressetypen."
+  },
+  "1.0.38": {
+    "en": "Repair can now make the proxy forget its Bluetooth bond with one bed. A stale bond is refused exactly like a closed pairing window, and until now the only cure was clearing the whole board, which also erased its WiFi.",
+    "no": "Reparer kan nå be proxyen glemme Bluetooth-bindingen mot én seng. En gammel binding avvises akkurat som et lukket paringsvindu, og hittil var eneste utvei å tømme hele kortet, som også slettet WiFi-oppsettet."
   }
 }

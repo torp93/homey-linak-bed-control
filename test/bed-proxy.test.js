@@ -33,6 +33,7 @@ class FakeClient extends EventEmitter {
   async waitForDevice(mac) { this._note('waitForDevice', mac); return { rssi: -60, addressType: 1 }; }
   async bleConnect(mac, options) { this._note('bleConnect', mac, options); return { mtu: 23 }; }
   async blePair(mac) { this._note('blePair', mac); }
+  async bleUnpair(mac) { this._note('bleUnpair', mac); }
   bleDisconnect(mac) { this._note('bleDisconnect', mac); }
   async getServices() { this._note('getServices'); return []; }
 
@@ -496,6 +497,34 @@ test('probe lar feilen fra sengen slippe gjennom til paringen', async () => {
   };
 
   await assert.rejects(proxy.probe(MAC, { addressType: 1 }), /did not accept/);
+});
+
+test('forgetBond legger ned økten først, så fjerner bindingen', async () => {
+  const { proxy, client } = makeProxy();
+  await proxy.sendCommand(MAC, 'lightOn', { ...OPTS, lingerMs: 5000 });
+  assert.equal(proxy._live.has(MAC), true, 'dvele-økten står åpen');
+
+  await proxy.forgetBond(MAC);
+
+  assert.equal(client.count('bleUnpair'), 1);
+  assert.equal(proxy._live.has(MAC), false, 'økten er lagt ned');
+  assert.equal(proxy._handles.has(MAC), false, 'handles hørte til den gamle økten');
+
+  // Rekkefølgen er poenget: bindingen kan ikke fjernes mens den er i bruk.
+  const names = client.calls.map(([n]) => n);
+  assert.ok(names.indexOf('bleDisconnect') < names.indexOf('bleUnpair'),
+    'nedkobling skal komme før unpair');
+});
+
+test('forgetBond rører ikke den andre sengen', async () => {
+  const OTHER = 'F9:A0:BE:5F:BF:A6';
+  const { proxy, client } = makeProxy();
+  await proxy.sendCommand(OTHER, 'lightOn', { ...OPTS, lingerMs: 5000 });
+
+  await proxy.forgetBond(MAC);
+
+  assert.deepEqual(client.calls.filter(([n]) => n === 'bleUnpair').map(([, mac]) => mac), [MAC]);
+  assert.equal(proxy._live.has(OTHER), true, 'den andre sengens økt står urørt');
 });
 
 test('død dvele-økt gjenåpnes automatisk med ett nytt forsøk', async () => {

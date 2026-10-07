@@ -298,6 +298,16 @@ class BedDevice extends Homey.Device {
     return true;
   }
 
+  // Siste utvei når sengen nekter tilkobling: be proxyen glemme bindingen mot
+  // nettopp denne sengen. De lagrede handles hører til økten som nå er borte,
+  // så de kastes samtidig.
+  async forgetBond() {
+    await this._proxy().forgetBond(this._mac);
+    await this.forgetStoredHandles();
+    this.log('Bindingen mot sengen er glemt — neste tilkobling bonder på nytt');
+    return true;
+  }
+
   _proxy() {
     return this.homey.app.getProxy();
   }

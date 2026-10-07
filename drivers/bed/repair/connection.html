@@ -59,6 +59,10 @@
   <p class="hint" id="handlesHint"></p>
   <button id="handles" class="wide"></button>
 
+  <h3 id="bondTitle"></h3>
+  <p class="hint" id="bondHint"></p>
+  <button id="bond" class="wide"></button>
+
   <div id="result"></div>
 </div>
 
@@ -91,6 +95,15 @@
       saved: 'Address saved.',
       wasReset: 'Connection reset. The next command will connect again.',
       handlesCleared: 'Cleared. The next command looks the bed up from scratch.',
+      bondTitle: 'Forget the Bluetooth bond',
+      bondHint: 'The bed accepts one controller at a time, and a bond left over from '
+              + 'an earlier attempt is refused the same way a closed pairing window is. '
+              + 'This clears the bond for this bed only, on the proxy. The WiFi settings '
+              + 'are not touched. Afterwards, cut the power to the bed for two minutes '
+              + 'and press a button here within three minutes.',
+      bond: 'Forget the bond',
+      bondCleared: 'The bond is gone. Cut the power to the bed for two full minutes, plug '
+                 + 'it back in, and press a bed button within three minutes.',
     },
     no: {
       title: 'Reparer tilkoblingen',
@@ -118,6 +131,15 @@
       saved: 'Adressen er lagret.',
       wasReset: 'Tilkoblingen er nullstilt. Neste kommando kobler opp på nytt.',
       handlesCleared: 'Tømt. Neste kommando slår opp sengen fra bunnen.',
+      bondTitle: 'Glem Bluetooth-bindingen',
+      bondHint: 'Sengen godtar én styreenhet om gangen, og en binding som ligger igjen '
+              + 'fra et tidligere forsøk avvises på samme måte som et lukket paringsvindu. '
+              + 'Dette fjerner bindingen for kun denne sengen, på proxyen. WiFi-oppsettet '
+              + 'røres ikke. Ta deretter strømmen på sengen i to minutter og trykk på en '
+              + 'knapp her innen tre minutter.',
+      bond: 'Glem bindingen',
+      bondCleared: 'Bindingen er borte. Ta strømmen på sengen i to hele minutter, sett den '
+                 + 'inn igjen, og trykk på en sengeknapp innen tre minutter.',
     },
   };
 
@@ -142,15 +164,17 @@
   const saveBtn = document.getElementById('save');
   const resetBtn = document.getElementById('reset');
   const handlesBtn = document.getElementById('handles');
+  const bondBtn = document.getElementById('bond');
 
   for (const key of ['lead', 'hostLabel', 'portLabel', 'resetTitle', 'resetHint',
-    'handlesTitle', 'handlesHint']) {
+    'handlesTitle', 'handlesHint', 'bondTitle', 'bondHint']) {
     document.getElementById(key).textContent = T[key];
   }
   testBtn.textContent = T.test;
   saveBtn.textContent = T.save;
   resetBtn.textContent = T.reset;
   handlesBtn.textContent = T.handles;
+  bondBtn.textContent = T.bond;
 
   function show(text, cls) {
     resultEl.textContent = text;
@@ -215,6 +239,15 @@
       handlesBtn.disabled = false;
       if (error) { show(String(error.message || error), 'bad'); return; }
       show(T.handlesCleared, 'ok');
+    });
+  });
+
+  bondBtn.addEventListener('click', () => {
+    bondBtn.disabled = true;
+    Homey.emit('forgetBond', null, (error) => {
+      bondBtn.disabled = false;
+      if (error) { show(String(error.message || error), 'bad'); return; }
+      show(T.bondCleared, 'ok');
     });
   });
 })();

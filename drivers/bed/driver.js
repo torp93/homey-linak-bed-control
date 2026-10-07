@@ -90,6 +90,7 @@ class BedDriver extends Homey.Driver {
 
     session.setHandler('resetConnection', () => device.resetConnection());
     session.setHandler('forgetHandles', () => device.forgetStoredHandles());
+    session.setHandler('forgetBond', () => device.forgetBond());
   }
 
   async onPairListDevices() {
