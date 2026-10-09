@@ -47,6 +47,19 @@ class BedDriver extends Homey.Driver {
       return { devices, seen: this._lastSeen, known: this._lastKnown };
     });
 
+    // «Jeg ser ikke sengen min»: vis ALT proxyen hører, ikke bare det som
+    // matcher gjenkjenningen.
+    //
+    // Navnemønsteret «Bed 5406» er bekreftet på TD5, men vi vet ikke at alle
+    // LINAK-bokser annonserer slik, og en seng som ikke matcher er i dag
+    // usynlig selv om den ville virket. Dette ble trygt først da paringen fikk
+    // en ekte tilkoblingsprøve: velger brukeren noe som ikke er en LINAK-seng,
+    // feiler proben, og ingenting blir lagt til.
+    session.setHandler('search_all', async () => {
+      const devices = await this.onPairListDevices({ includeUnknown: true });
+      return { devices, seen: this._lastSeen, known: this._lastKnown };
+    });
+
     // Paringen koblet aldri til sengen — den lyttet bare etter annonseringer.
     // Da kunne en seng legges til uten problemer og likevel nekte all styring,
     // fordi det tre minutter lange vinduet etter strømbruddet var ute før
@@ -93,14 +106,16 @@ class BedDriver extends Homey.Driver {
     session.setHandler('forgetBond', () => device.forgetBond());
   }
 
-  async onPairListDevices() {
+  async onPairListDevices({ includeUnknown = false } = {}) {
     const proxy = this.homey.app.getProxy();
     const advertisements = await proxy.discover({ durationMs: 12000 });
-    const beds = advertisements.filter(isLinakBed);
+    const beds = includeUnknown ? advertisements : advertisements.filter(isLinakBed);
 
     this.log(
       `BLE-skann ga ${advertisements.length} annonsering(er); `
-      + `fant ${beds.length} LINAK-seng(er)`,
+      + (includeUnknown
+        ? 'viser alle (brukeren ser ikke sengen sin)'
+        : `fant ${beds.length} LINAK-seng(er)`),
     );
 
     for (const bed of beds) {
@@ -125,7 +140,13 @@ class BedDriver extends Homey.Driver {
     this._lastKnown = beds.length - fresh.length;
 
     return fresh.map((bed) => ({
-      name: bed.localName || `LINAK-seng ${bed.mac.slice(-5).replace(':', '')}`,
+      // rssi er kun til visningen, så brukeren kan skille sin egen seng fra
+      // naboens. Søkevisningen fjerner feltet før createDevice.
+      rssi: bed.rssi,
+      name: bed.localName
+        || (includeUnknown
+          ? `Bluetooth ${bed.mac}`
+          : `LINAK bed ${bed.mac.slice(-5).replace(':', '')}`),
       data: {
         id: bed.mac,
       },

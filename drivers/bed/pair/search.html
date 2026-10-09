@@ -34,6 +34,7 @@
   <div id="list"></div>
   <div id="note"></div>
   <button id="retry" class="retry" style="display:none"></button>
+  <button id="all" class="retry" style="display:none"></button>
 </div>
 
 <script type="application/javascript">
@@ -69,8 +70,16 @@
                  + 'again here within three minutes. Also close any phone app connected to the bed.',
         addAnyway: 'Add it anyway',
         signal: (n) => 'Bluetooth signal ' + n + ' dBm.',
-        signalWeak: (n) => 'Bluetooth signal ' + n + ' dBm — that is weak. Move the ESP32 closer '
+        signalWeak: (n) => 'Bluetooth signal ' + n + ' dBm. That is weak. Move the ESP32 closer '
                          + 'to the bed if commands turn unreliable.',
+        showAll: 'I do not see my bed',
+        allTitle: 'Everything the proxy can hear',
+        allSub: 'Tap your bed. The app connects to it to check, and says so if it is '
+              + 'not a bed it can control.',
+        allEmpty: 'The proxy heard nothing at all. Check that it has power, and that it '
+                + 'is close enough to the bed.',
+        allHint: 'This list is unfiltered, so it also holds phones, watches and anything '
+               + 'else nearby. A bed usually calls itself something like "Bed 5406".',
       },
       no: {
         searching: 'Søker etter sengen',
@@ -105,8 +114,16 @@
                  + 'er koblet til sengen.',
         addAnyway: 'Legg den til likevel',
         signal: (n) => 'Bluetooth-signal ' + n + ' dBm.',
-        signalWeak: (n) => 'Bluetooth-signal ' + n + ' dBm — det er svakt. Flytt ESP32-en '
+        signalWeak: (n) => 'Bluetooth-signal ' + n + ' dBm, og det er svakt. Flytt ESP32-en '
                          + 'nærmere sengen hvis kommandoene blir ustabile.',
+        showAll: 'Jeg ser ikke sengen min',
+        allTitle: 'Alt proxyen hører',
+        allSub: 'Trykk på sengen din. Appen kobler til den for å sjekke, og sier fra '
+              + 'hvis det ikke er en seng den kan styre.',
+        allEmpty: 'Proxyen hørte ingenting i det hele tatt. Sjekk at den har strøm, og '
+                + 'at den står nært nok sengen.',
+        allHint: 'Denne lista er ufiltrert, så den inneholder også telefoner, klokker og '
+               + 'alt annet i nærheten. En seng kaller seg vanligvis noe som «Bed 5406».',
       },
     };
 
@@ -128,9 +145,11 @@
     const listEl = document.getElementById('list');
     const noteEl = document.getElementById('note');
     const retryEl = document.getElementById('retry');
+    const allEl = document.getElementById('all');
 
     subtitleEl.textContent = T.pairingMode;
     retryEl.textContent = T.retry;
+    allEl.textContent = T.showAll;
 
     function note(text, cls) {
       noteEl.textContent = text || '';
@@ -141,7 +160,14 @@
       titleEl.textContent = T.adding;
       subtitleEl.textContent = device.name;
 
-      Homey.createDevice(device, (error) => {
+      // rssi følger med fra driveren kun for visningen. Det skal ikke inn i
+      // enheten, så bare de fire feltene Homey faktisk bruker sendes videre.
+      Homey.createDevice({
+        name: device.name,
+        data: device.data,
+        store: device.store,
+        settings: device.settings,
+      }, (error) => {
         if (error) {
           note(T.addFailed + (error.message || error), 'bad');
           retryEl.style.display = '';
@@ -195,6 +221,7 @@
 
       listEl.innerHTML = '';
       retryEl.style.display = '';
+      allEl.style.display = '';
 
       if (devices.length) {
         titleEl.textContent = devices.length === 1 ? T.foundOne : T.foundMany(devices.length);
@@ -232,8 +259,71 @@
       note(T.noneNote, 'bad');
     }
 
+    // Knapp for å liste ALT proxyen hører. Gjenkjenningen krever navnet
+    // «Bed <tall>», og det er bekreftet på TD5, men vi vet ikke at hver
+    // LINAK-boks annonserer slik. En seng som ikke matcher var før helt usynlig.
+    // Tilkoblingsprøven i add() er sikkerhetsnettet: velger brukeren noe som
+    // ikke er en seng, feiler den der, ikke etterpå.
+    function renderAll(result) {
+      const devices = (result && result.devices) || [];
+
+      listEl.innerHTML = '';
+      retryEl.style.display = '';
+      allEl.style.display = 'none';
+
+      if (!devices.length) {
+        titleEl.textContent = T.allTitle;
+        subtitleEl.textContent = '';
+        note(T.allEmpty, 'bad');
+        return;
+      }
+
+      titleEl.textContent = T.allTitle;
+      subtitleEl.textContent = T.allSub;
+
+      for (const device of devices) {
+        const button = document.createElement('button');
+        button.className = 'bed';
+        button.appendChild(document.createTextNode(device.name));
+        const small = document.createElement('small');
+        const mac = (device.store && device.store.mac) || '';
+        small.textContent = (typeof device.rssi === 'number' && isFinite(device.rssi))
+          ? mac + '   ' + device.rssi + ' dBm'
+          : mac;
+        button.appendChild(small);
+        button.addEventListener('click', () => add(device));
+        listEl.appendChild(button);
+      }
+
+      note(T.allHint, '');
+    }
+
+    allEl.addEventListener('click', () => {
+      retryEl.style.display = 'none';
+      allEl.style.display = 'none';
+      allEl.disabled = true;
+      listEl.innerHTML = '';
+      titleEl.textContent = T.searching;
+      subtitleEl.textContent = T.takesHalfMinute;
+      note('');
+
+      Homey.emit('search_all', null, (error, result) => {
+        allEl.disabled = false;
+        if (error) {
+          titleEl.textContent = T.failedTitle;
+          subtitleEl.textContent = '';
+          note(String(error.message || error), 'bad');
+          retryEl.style.display = '';
+          allEl.style.display = '';
+          return;
+        }
+        renderAll(result);
+      });
+    });
+
     function search() {
       retryEl.style.display = 'none';
+      allEl.style.display = 'none';
       retryEl.disabled = true;
       listEl.innerHTML = '';
       titleEl.textContent = T.searching;
@@ -247,6 +337,7 @@
           subtitleEl.textContent = '';
           note(String(error.message || error), 'bad');
           retryEl.style.display = '';
+          allEl.style.display = '';
           return;
         }
         render(result);

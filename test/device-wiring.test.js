@@ -79,3 +79,42 @@ test('gruppa kaller kun metoder som finnes på en seng', () => {
     assert.ok(bedMethods.has(method), `gruppa kaller bed.${method}(), som ikke finnes på sengen`);
   }
 });
+
+// Samme feilklasse på den andre siden av paringen: visningen sender et navn
+// ingen setHandler lytter på. Homey svarer da med en tidsavbrutt emit og
+// ingenting i loggen som peker på årsaken, mens både HTML og JS er feilfri.
+//
+// onPair og onRepair har hvert sitt sett med lyttere, så de må sjekkes hver for
+// seg: search_beds finnes bare i paringen, resetConnection bare i reparasjonen.
+test('hver Homey.emit i paringsvisningene har en setHandler i driveren', () => {
+  const driver = fs.readFileSync(path.join(__dirname, '..', 'drivers/bed/driver.js'), 'utf8');
+
+  const split = driver.indexOf('async onRepair(');
+  assert.ok(split > 0, 'fant ikke onRepair i driveren');
+
+  const handlers = (source) => new Set(
+    [...source.matchAll(/setHandler\(\s*'([^']+)'/g)].map((m) => m[1]),
+  );
+
+  const sections = {
+    pair: handlers(driver.slice(0, split)),
+    repair: handlers(driver.slice(split)),
+  };
+
+  let checked = 0;
+  for (const [section, known] of Object.entries(sections)) {
+    const dir = path.join(__dirname, '..', 'drivers/bed', section);
+    for (const file of fs.readdirSync(dir).filter((name) => name.endsWith('.html'))) {
+      const view = fs.readFileSync(path.join(dir, file), 'utf8');
+      for (const [, event] of view.matchAll(/Homey\.emit\(\s*'([^']+)'/g)) {
+        checked += 1;
+        assert.ok(
+          known.has(event),
+          `${section}/${file} sender '${event}', som ingen setHandler i ${section} lytter på`,
+        );
+      }
+    }
+  }
+
+  assert.ok(checked > 0, 'fant ingen Homey.emit i visningene å sjekke');
+});
