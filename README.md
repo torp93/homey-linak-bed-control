@@ -159,12 +159,20 @@ Motor commands must be repeated every 100 ms; the motor stops on its own within
   and battery `99fa0061` are absent; the bed exposes one status characteristic
   `99fa0003` and the DPG pair `99fa0010`/`99fa0011`.
 - **And the status characteristic carries nothing.** Measured 2026-10-11 with
-  `tools/read-status.js` on a bonded session: a read of `99fa0003` succeeds and
-  returns zero bytes, and a notify subscription is accepted but stays silent
-  through a full six-second movement. The same holds for the DPG characteristic
-  `99fa0011`, and sending the desk wake command `0xFE` first changes nothing.
-  So this control box has no position feedback of any kind: presets can only be
-  timed, and "move to 30%" is not possible.
+  `tools/read-status.js` on a bonded session: a read of `99fa0003` returns zero
+  bytes, and no notification ever arrives, not in idle and not through a full
+  six-second movement. Same for the DPG characteristic `99fa0011`, with and
+  without the desk wake command `0xFE`. So this control box has no position
+  feedback of any kind: presets can only be timed, and "move to 30%" is not
+  possible.
+- **That measurement is only valid because the CCCD was written by hand.**
+  ESPHome's `BluetoothGATTNotifyRequest` does *not* write the descriptor. It
+  answers with `BluetoothGATTNotifyResponse` and looks entirely successful, but
+  it only registers a callback on the ESP32, leaving the CCCD at `0x0000` so the
+  device never sends anything. The app writes `0x0100` to the descriptor itself
+  and reads it back to confirm, because an acknowledged write is not proof. The
+  first run of the experiment skipped this and produced a confident wrong
+  answer.
 - **The control service is `99fa0001`**, not `99fa0000` as desk implementations use.
 
 ### Things that cost real debugging time

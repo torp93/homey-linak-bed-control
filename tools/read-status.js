@@ -33,14 +33,20 @@ const port = Number(args.get('port') || 6053);
 const command = args.get('command') || 'backUp';
 const moveSeconds = Number(args.get('seconds') || 6);
 const idleSeconds = Number(args.get('idle') || 3);
-// Egen handleliste. Statuskanalen er handle 18 på begge sengene her, og DPG er
-// 22. DPG kan også varsle, og den er aldri prøvd som kilde.
-const handles = (args.get('handles') || '').split(',').map(Number).filter(Boolean);
+// Egne kanaler på formen handle:cccd, kommaseparert. Statuskanalen er 18:19 på
+// begge sengene her, DPG er 22:23. CCCD-en MÅ være med: ESPHome skriver den
+// ikke selv, og uten den sender sengen aldri et varsel uansett hvor pent
+// notify-forespørselen kvitteres.
+const channels = (args.get('channels') || '').split(',').filter(Boolean).map((pair) => {
+  const [handle, cccd] = pair.split(':').map(Number);
+  return { handle, cccd };
+});
 // LINAKs skrivebord strømmer ikke status før de har fått 0xFE. Må utelukkes.
 const wakeup = args.get('wakeup') === 'true';
 
 if (!host || !mac) {
-  console.error('Bruk: node tools/read-status.js --host <ip> --mac <AA:BB:..> [--command backUp] [--seconds 6] [--idle 3]');
+  console.error('Bruk: node tools/read-status.js --host <ip> --mac <AA:BB:..> '
+    + '[--channels 18:19,22:23] [--wakeup] [--command backUp] [--seconds 6] [--idle 3]');
   process.exit(2);
 }
 
@@ -101,7 +107,7 @@ let frames = 0;
     stopWatching = await proxy.watchStatus(mac, (data, handle) => {
       frames += 1;
       console.log(stamp(), `VARSEL h${handle}`, describe(data));
-    }, { ...options, handles, wakeup });
+    }, { ...options, channels, wakeup });
 
     console.log(stamp(), `abonnement på plass${wakeup ? ' (med wakeup)' : ''}, `
       + `${idleSeconds} s i ro (ser om sengen sender uoppfordret)`);
