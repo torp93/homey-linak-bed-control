@@ -157,7 +157,14 @@ Motor commands must be repeated every 100 ms; the motor stops on its own within
   section is `0x0B`/`0x0A` — "back" in LINAK's terminology.
 - **The per-actuator position characteristics don't exist.** `99fa0025`–`99fa0028`
   and battery `99fa0061` are absent; the bed exposes one status characteristic
-  `99fa0003` and the DPG pair `99fa0010`/`99fa0011`. There is no readable position.
+  `99fa0003` and the DPG pair `99fa0010`/`99fa0011`.
+- **And the status characteristic carries nothing.** Measured 2026-10-11 with
+  `tools/read-status.js` on a bonded session: a read of `99fa0003` succeeds and
+  returns zero bytes, and a notify subscription is accepted but stays silent
+  through a full six-second movement. The same holds for the DPG characteristic
+  `99fa0011`, and sending the desk wake command `0xFE` first changes nothing.
+  So this control box has no position feedback of any kind: presets can only be
+  timed, and "move to 30%" is not possible.
 - **The control service is `99fa0001`**, not `99fa0000` as desk implementations use.
 
 ### Things that cost real debugging time
@@ -187,11 +194,16 @@ Motor commands must be repeated every 100 ms; the motor stops on its own within
 ## Development
 
 ```bash
-npm test                              # 46 unit tests, no hardware needed
+npm test                              # unit tests, no hardware needed
 homey app validate --level publish
 homey app run --remote                # dev session on the Homey
 homey app install                     # permanent install
 ```
+
+`tools/read-status.js` is a hardware probe, run from a PC straight at the
+ESP32, that reads and subscribes to a bed's status and DPG characteristics while
+it moves. It is how the point above was established, and it is the quickest way
+to check whether a different LINAK control box does report its position.
 
 Pure logic lives in `lib/` and is covered by `node --test`: the protocol
 encoding, the ESPHome wire format, the capability migration, and the command

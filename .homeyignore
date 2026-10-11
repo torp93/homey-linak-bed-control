@@ -9,6 +9,9 @@
 # Tester kjøres på utviklermaskinen, aldri på Homey.
 test/
 
+# Måleverktøy som kjøres fra PC-en mot ESP32-en, aldri fra Homey.
+tools/
+
 # Dokumentasjon og skjermbilder hører hjemme på GitHub. LICENSE og
 # THIRD_PARTY_NOTICES.md blir med — de hører til det som distribueres.
 docs/

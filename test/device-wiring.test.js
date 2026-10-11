@@ -24,6 +24,7 @@ const INHERITED = [
 const DEVICES = [
   'drivers/bed/device.js',
   'drivers/all_beds/device.js',
+  'drivers/bed_light/device.js',
 ].map((file) => [file, path.join(__dirname, '..', file)]);
 
 for (const [name, file] of DEVICES) {

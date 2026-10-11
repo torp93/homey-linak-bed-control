@@ -708,6 +708,41 @@
           "template": "add_devices"
         }
       ]
+    },
+    {
+      "id": "bed_light",
+      "name": {
+        "en": "Under-bed light",
+        "no": "Sengelys"
+      },
+      "class": "light",
+      "capabilities": [
+        "onoff"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/bed_light/assets/images/small.png",
+        "large": "/drivers/bed_light/assets/images/large.png",
+        "xlarge": "/drivers/bed_light/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
     }
   ]
 }

@@ -175,3 +175,101 @@ test('parseAdvertisementData tåler søppel uten å kaste', () => {
   assert.equal(parsed.localName, '');
   assert.deepEqual(parsed.serviceUuids, []);
 });
+// Statuskanalen på sengen: lesing og notifikasjoner. Meldingsnumrene (73/74 for
+// lesing, 78/79/84 for notify) og feltnumrene er hentet fra ESPHome sin egen
+// api_pb2, og en stille forveksling her ville gitt et abonnement som later som
+// det står mens ingenting kommer fram.
+const ADDRESS = 0xD7CCF2D78A4En;
+const MAC = 'D7:CC:F2:D7:8A:4E';
+
+// Plukker nyttelasten ut av en ramme klienten har skrevet til socketen.
+function unframe(buf) {
+  const len = decodeVarint(buf, 1);
+  const type = decodeVarint(buf, len.offset);
+  return { type: Number(type.value), fields: decodeFields(buf.subarray(type.offset)) };
+}
+
+function wiredClient() {
+  const { client, seen } = fakeClient();
+  const writes = [];
+  client._socket = { destroyed: false, write: (buf) => writes.push(buf) };
+  return { client, seen, writes };
+}
+
+test('gattNotify sender adresse, handle og enable, og venter på kvitteringen', async () => {
+  const { client, writes } = wiredClient();
+
+  const pending = client.gattNotify(MAC, 18, { enable: true });
+  assert.equal(writes.length, 1);
+  const sent = unframe(writes[0]);
+  assert.equal(sent.type, 78);
+  assert.equal(sent.fields[1], ADDRESS);
+  assert.equal(Number(sent.fields[2]), 18);
+  assert.equal(Number(sent.fields[3]), 1);
+
+  // Kvitteringen er type 84 med samme adresse og handle.
+  client._onData(frame(84, Buffer.concat([
+    Buffer.from([(1 << 3) | 0]), encodeVarint(ADDRESS),
+    Buffer.from([(2 << 3) | 0]), encodeVarint(18),
+  ])));
+  await pending;
+});
+
+test('gattNotify avviser når sengen svarer med GATT-feil', async () => {
+  const { client } = wiredClient();
+  const pending = client.gattNotify(MAC, 18);
+
+  // Type 82 med ATT-feil 5: kanalen er låst fordi økten ikke er bondet.
+  client._onData(frame(82, Buffer.concat([
+    Buffer.from([(1 << 3) | 0]), encodeVarint(ADDRESS),
+    Buffer.from([(2 << 3) | 0]), encodeVarint(18),
+    Buffer.from([(3 << 3) | 0]), encodeVarint(5),
+  ])));
+
+  await assert.rejects(pending, (error) => error.attError === 5);
+});
+
+test('onNotify dekoder varseldata og siler bort alt annet', () => {
+  const { client } = wiredClient();
+  const got = [];
+  const off = client.onNotify((frame_) => got.push(frame_));
+
+  const notifyFrame = (handle, bytes) => frame(79, Buffer.concat([
+    Buffer.from([(1 << 3) | 0]), encodeVarint(ADDRESS),
+    Buffer.from([(2 << 3) | 0]), encodeVarint(handle),
+    Buffer.from([(3 << 3) | 2]), encodeVarint(bytes.length), Buffer.from(bytes),
+  ]));
+
+  client._onData(notifyFrame(18, [0x0b, 0x00, 0x2c, 0x01]));
+  // Skriverkvitteringen (83) har samme adresse og handle, og skal ikke telle
+  // som varseldata.
+  client._onData(frame(83, Buffer.concat([
+    Buffer.from([(1 << 3) | 0]), encodeVarint(ADDRESS),
+    Buffer.from([(2 << 3) | 0]), encodeVarint(18),
+  ])));
+
+  assert.equal(got.length, 1);
+  assert.equal(got[0].mac, MAC);
+  assert.equal(got[0].handle, 18);
+  assert.deepEqual([...got[0].data], [0x0b, 0x00, 0x2c, 0x01]);
+
+  off();
+  client._onData(notifyFrame(18, [0x01]));
+  assert.equal(got.length, 1, 'avmeldt lytter skal ikke få mer');
+});
+
+test('gattRead gir bytene fra svaret, også når de er tomme', async () => {
+  const { client, writes } = wiredClient();
+
+  const pending = client.gattRead(MAC, 18);
+  assert.equal(unframe(writes[0]).type, 73);
+
+  // Slik svarte sengen faktisk: feltet finnes, men har null bytes.
+  client._onData(frame(74, Buffer.concat([
+    Buffer.from([(1 << 3) | 0]), encodeVarint(ADDRESS),
+    Buffer.from([(2 << 3) | 0]), encodeVarint(18),
+  ])));
+
+  const value = await pending;
+  assert.equal(value.length, 0);
+});

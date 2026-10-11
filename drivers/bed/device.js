@@ -266,6 +266,7 @@ class BedDevice extends Homey.Device {
     this.log(`Seng slettet — ${this._mac} sluppet`);
     // Gruppa teller sengene på nytt uten denne.
     this._notifyGroups();
+    this._notifyLightsGone();
   }
 
   // homey.setInterval ryddes automatisk når instansen rives, men en slettet
@@ -330,6 +331,33 @@ class BedDevice extends Homey.Device {
       }
     } catch (error) {
       // Gruppa finnes ikke nødvendigvis — den er en valgfri enhet.
+    }
+  }
+
+  // Lysenheten er valgfri, men finnes den, skal bryteren der vise det samme som
+  // sengen. Settes lyset fra sengens egen knapp, et Flow-kort eller gruppa, får
+  // lysenheten vite det her. Uten dette ville bryteren stått og løyet, og da
+  // lyver Google Home like mye.
+  _notifyLights(on) {
+    this._eachLight((light) => light.syncFromBed(on));
+  }
+
+  // Sengen er slettet: lysenheten har ingenting å styre lenger.
+  _notifyLightsGone() {
+    this._eachLight((light) => light.bedGone());
+  }
+
+  // Fyr-og-glem, som gruppevarslingen: en feil her skal ikke velte kommandoen
+  // som er på vei til sengen.
+  _eachLight(action) {
+    try {
+      for (const light of this.homey.drivers.getDriver('bed_light').getDevices()) {
+        const mac = String(light.getStoreValue('mac') || '').toUpperCase();
+        if (mac !== String(this._mac).toUpperCase()) continue;
+        Promise.resolve(action(light)).catch(() => {});
+      }
+    } catch (error) {
+      // Lysenheten er en valgfri enhet, akkurat som gruppa.
     }
   }
 
@@ -486,6 +514,7 @@ class BedDevice extends Homey.Device {
       // Sengen rapporterer ikke lysstatus, og knappen er ikke lesbar —
       // tilstanden holdes i store for Flow-betingelsen «lyset er på».
       await this.setStoreValue('lightOn', on).catch(() => {});
+      this._notifyLights(on);
       await this._markAvailable();
       if (!moving) await this._setConnection('idle');
       return true;
