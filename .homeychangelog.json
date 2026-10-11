@@ -141,5 +141,9 @@
   "1.0.38": {
     "en": "Repair can now make the proxy forget its Bluetooth bond with one bed. A stale bond is refused exactly like a closed pairing window, and until now the only cure was clearing the whole board, which also erased its WiFi.",
     "no": "Reparer kan nå be proxyen glemme Bluetooth-bindingen mot én seng. En gammel binding avvises akkurat som et lukket paringsvindu, og hittil var eneste utvei å tømme hele kortet, som også slettet WiFi-oppsettet."
+  },
+  "1.0.39": {
+    "en": "The under-bed light is now also available as a separate device with a plain on/off switch, so it can be controlled by voice through Google Home or Alexa. The bed itself keeps its light button, and the two stay in step.",
+    "no": "Undersengslyset finnes nå også som egen enhet med en ren av/på-bryter, slik at det kan styres med stemmen gjennom Google Home eller Alexa. Sengen beholder lysknappen sin, og de to følger hverandre."
   }
 }
