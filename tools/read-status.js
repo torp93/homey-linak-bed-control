@@ -9,6 +9,8 @@
 // sengen, så dette er eneste kandidat for posisjonsdata.
 //
 // Verktøyet kjøres fra PC-en, direkte mot ESP32-en. Ingen Homey involvert.
+// Utskriften er på engelsk, for den sendes til brukere som rapporterer om
+// andre kontrollbokser enn vår.
 //
 //   node tools/read-status.js --host 192.168.10.14 --mac D7:CC:F2:D7:8A:4E
 //
@@ -33,10 +35,10 @@ const port = Number(args.get('port') || 6053);
 const command = args.get('command') || 'backUp';
 const moveSeconds = Number(args.get('seconds') || 6);
 const idleSeconds = Number(args.get('idle') || 3);
-// Egne kanaler på formen handle:cccd, kommaseparert. Statuskanalen er 18:19 på
-// begge sengene her, DPG er 22:23. CCCD-en MÅ være med: ESPHome skriver den
-// ikke selv, og uten den sender sengen aldri et varsel uansett hvor pent
-// notify-forespørselen kvitteres.
+// Egne kanaler på formen handle:cccd, kommaseparert. Står det ingenting, bruker
+// vi statuskanalen slik tjenesteoppdagelsen fant den. CCCD-en MÅ være med:
+// ESPHome skriver den ikke selv, og uten den sender sengen aldri et varsel
+// uansett hvor pent notify-forespørselen kvitteres.
 const channels = (args.get('channels') || '').split(',').filter(Boolean).map((pair) => {
   const [handle, cccd] = pair.split(':').map(Number);
   return { handle, cccd };
@@ -45,8 +47,11 @@ const channels = (args.get('channels') || '').split(',').filter(Boolean).map((pa
 const wakeup = args.get('wakeup') === 'true';
 
 if (!host || !mac) {
-  console.error('Bruk: node tools/read-status.js --host <ip> --mac <AA:BB:..> '
-    + '[--channels 18:19,22:23] [--wakeup] [--command backUp] [--seconds 6] [--idle 3]');
+  console.error('Usage: node tools/read-status.js --host <proxy ip> --mac <AA:BB:CC:DD:EE:FF>');
+  console.error('       [--channels 18:19,22:23] [--wakeup] [--command backUp] [--seconds 6] [--idle 3]');
+  console.error('');
+  console.error('Connects to the bed through an ESPHome Bluetooth proxy, subscribes to its');
+  console.error('status channel, and prints every notification it sends while a motor runs.');
   process.exit(2);
 }
 
@@ -62,7 +67,7 @@ function describe(buf) {
   const bytes = [...buf].join(' ');
   const words = [];
   for (let i = 0; i + 1 < buf.length; i += 2) words.push(buf.readUInt16LE(i));
-  return `len=${buf.length}  hex=[${hex}]  byte=[${bytes}]  u16le=[${words.join(' ')}]`;
+  return `len=${buf.length}  hex=[${hex}]  bytes=[${bytes}]  uint16le=[${words.join(' ')}]`;
 }
 
 let frames = 0;
@@ -73,7 +78,7 @@ let frames = 0;
     port,
     log: (...parts) => console.log(stamp(), '[proxy]', ...parts),
   });
-  proxy.on('error', (error) => console.error(stamp(), '[proxy-feil]', error.message));
+  proxy.on('error', (error) => console.error(stamp(), '[proxy error]', error.message));
 
   // Økten skal slippes uansett hvordan dette ender, ellers står
   // fjernkontrollen død til ESP-ens egen timeout.
@@ -83,53 +88,63 @@ let frames = 0;
     await proxy.destroy().catch(() => {});
   };
   process.on('SIGINT', async () => {
-    console.log('\nAvbrutt, slipper økten ...');
+    console.log('\nInterrupted, releasing the connection ...');
     await shutdown();
     process.exit(130);
   });
 
   try {
-    console.log(stamp(), `kobler til ${host}:${port}, seng ${mac}`);
+    console.log(stamp(), `connecting to ${host}:${port}, bed ${mac}`);
 
     // Adressetypen er kjent: sengene bruker random static. Da slipper vi å
     // vente på en annonsering først.
     const options = { addressType: ADDRESS_TYPE.RANDOM, lingerMs: 60000 };
 
+    // Proben kobler opp, bonder og slipper igjen. Den gir oss handles uten å
+    // røre en motor, og de er det første en annen kontrollboks må vise fram.
+    const probed = await proxy.probe(mac, options);
+    const h = probed.handles || {};
+    console.log(stamp(), 'GATT HANDLES');
+    console.log(`         command  99fa0002 = ${h.commandHandle}`);
+    console.log(`         status   99fa0003 = ${h.statusHandle} (CCCD ${h.statusCccdHandle})`);
+    console.log(`         dpg      99fa0011 = ${h.dpgHandle} (CCCD ${h.dpgCccdHandle})`);
+    console.log(`         signal   ${probed.rssi === null ? 'not measured' : probed.rssi + ' dBm'}`);
+
     // Les først. Kanalen er lesbar etter bonding, og en engangsverdi forteller
     // allerede om feltet er statisk eller følger sengen.
     try {
       const value = await proxy.readStatus(mac, options);
-      console.log(stamp(), 'LESING  ', describe(value));
+      console.log(stamp(), 'READ     ', describe(value));
     } catch (error) {
-      console.log(stamp(), 'LESING feilet:', error.message);
+      console.log(stamp(), 'READ failed:', error.message);
     }
 
     stopWatching = await proxy.watchStatus(mac, (data, handle) => {
       frames += 1;
-      console.log(stamp(), `VARSEL h${handle}`, describe(data));
+      console.log(stamp(), `NOTIFY h${handle}`, describe(data));
     }, { ...options, channels, wakeup });
 
-    console.log(stamp(), `abonnement på plass${wakeup ? ' (med wakeup)' : ''}, `
-      + `${idleSeconds} s i ro (ser om sengen sender uoppfordret)`);
+    console.log(stamp(), `subscribed${wakeup ? ' (wake command sent)' : ''}, `
+      + `${idleSeconds} s idle first, to see whether the bed reports on its own`);
     await sleep(idleSeconds * 1000);
     const idleFrames = frames;
 
-    console.log(stamp(), `kjører ${command} i ${moveSeconds} s`);
+    console.log(stamp(), `running ${command} for ${moveSeconds} s`);
     await proxy.sendCommand(mac, command, { ...options, durationSeconds: moveSeconds });
     const moveFrames = frames - idleFrames;
 
-    console.log(stamp(), `bevegelsen ferdig, ${idleSeconds} s i ro igjen`);
+    console.log(stamp(), `movement done, ${idleSeconds} s idle again`);
     await sleep(idleSeconds * 1000);
 
     console.log();
-    console.log(`Varsler i ro før bevegelse : ${idleFrames}`);
-    console.log(`Varsler under bevegelsen   : ${moveFrames}`);
-    console.log(`Varsler i ro etterpå       : ${frames - idleFrames - moveFrames}`);
+    console.log(`Notifications while idle   : ${idleFrames}`);
+    console.log(`Notifications while moving : ${moveFrames}`);
+    console.log(`Notifications after moving : ${frames - idleFrames - moveFrames}`);
     if (!frames) {
-      console.log('Ingen varsler i det hele tatt. Kanalen finnes, men sier ingenting av seg selv.');
+      console.log('Nothing at all. The channel exists, but this control box never reports.');
     }
   } catch (error) {
-    console.error(stamp(), 'FEILET:', error.message);
+    console.error(stamp(), 'FAILED:', error.message);
     process.exitCode = 1;
   } finally {
     await shutdown();
