@@ -174,6 +174,15 @@ Motor commands must be repeated every 100 ms; the motor stops on its own within
   first run of the experiment skipped this and produced a confident wrong
   answer.
 - **The control service is `99fa0001`**, not `99fa0000` as desk implementations use.
+- **The published memory recall codes do nothing here.** `0x0E`, `0x0F`, `0x0C`,
+  `0x44`, `0x83` and `0x84` were each held for six seconds on a bonded session
+  (2026-10-12, `tools/try-memory.js`). Every write was accepted and the bed did
+  not move. The commands were reaching the box: the same session blinked the
+  under-bed light between codes, as a signal to the person watching the bed, and
+  the light blinked every time. Note that memory positions belong to the TD5
+  Advanced control box, so a negative result cannot separate "wrong codes" from
+  "this box has no memory". The store codes were deliberately not tried, because
+  they would overwrite whatever the owner has saved from the handset.
 
 ### Things that cost real debugging time
 
