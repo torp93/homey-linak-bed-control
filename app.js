@@ -129,6 +129,17 @@ class LinakBedApp extends Homey.App {
       .getActionCard('linak_bed_light')
       .registerRunListener(({ device, state }) => device.setLight(state === 'on'));
 
+    // Stillinger. Flat er ankeret: begge motorene til endestopp, og derfra
+    // er kjente kjøretider repeterbare uten at sengen rapporterer noe.
+    this.homey.flow
+      .getActionCard('linak_bed_flat')
+      .registerRunListener(({ device }) => device.goFlat());
+
+    this.homey.flow
+      .getActionCard('linak_bed_preset')
+      .registerRunListener(({ device, back, leg }) =>
+        device.goToPosition({ back: Number(back), leg: Number(leg) }));
+
     this.homey.flow
       .getConditionCard('linak_bed_condition_light')
       .registerRunListener(({ device }) => device.lightIsOn());

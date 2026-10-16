@@ -56,6 +56,16 @@ class AllBedsDevice extends Homey.Device {
     this.log('Begge senger klar');
   }
 
+  // Stillingene gjøres på hver seng for seg. De kjører samtidig, slik
+  // knappene gjør: hver seng har sin egen kø i proxyen.
+  async goFlat() {
+    return this.runOnAll((bed) => bed.goFlat());
+  }
+
+  async goToPosition(position) {
+    return this.runOnAll((bed) => bed.goToPosition(position));
+  }
+
   _beds() {
     return this.homey.drivers.getDriver('bed').getDevices();
   }

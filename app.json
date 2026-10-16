@@ -498,6 +498,70 @@
             ]
           }
         ]
+      },
+      {
+        "id": "linak_bed_flat",
+        "title": {
+          "en": "Set the bed flat",
+          "no": "Legg sengen flat"
+        },
+        "hint": {
+          "en": "Runs both sections down to their end stops, so the bed ends up in the same place every time regardless of where it started. This is the only position this bed can reach exactly, since it does not report where it is.",
+          "no": "Kjører begge seksjonene ned til endestopp, så sengen ender likt hver gang uansett hvor den stod. Det er den eneste stillingen denne sengen kan treffe nøyaktig, siden den ikke rapporterer hvor den står."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed|all_beds"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_preset",
+        "title": {
+          "en": "Go to a position",
+          "no": "Kjør til en stilling"
+        },
+        "titleFormatted": {
+          "en": "Go to a position: back [[back]] s, legs [[leg]] s",
+          "no": "Kjør til en stilling: rygg [[back]] s, bein [[leg]] s"
+        },
+        "hint": {
+          "en": "Goes flat first, then runs the back and the legs up for the times you give. Starting from the end stops is what makes it repeatable: the same numbers give the same position every time. Find your times once by moving the bed by hand and counting the seconds.",
+          "no": "Går flat først, og kjører så rygg og bein opp så lenge du oppgir. At den starter fra endestopp er det som gjør den repeterbar: samme tall gir samme stilling hver gang. Finn tidene dine én gang ved å kjøre sengen for hånd og telle sekunder."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed|all_beds"
+          },
+          {
+            "name": "back",
+            "type": "number",
+            "min": 0,
+            "max": 60,
+            "step": 1,
+            "value": 8,
+            "title": {
+              "en": "Back, seconds",
+              "no": "Rygg, sekunder"
+            }
+          },
+          {
+            "name": "leg",
+            "type": "number",
+            "min": 0,
+            "max": 60,
+            "step": 1,
+            "value": 0,
+            "title": {
+              "en": "Legs, seconds",
+              "no": "Bein, sekunder"
+            }
+          }
+        ]
       }
     ],
     "conditions": [
@@ -594,8 +658,8 @@
                 "no": "Maksimal kjøretid"
               },
               "hint": {
-                "en": "The buttons run until you press Stop. This is the safety limit that ends the movement if a stop never arrives — not a normal run time.",
-                "no": "Knappene kjører til du trykker Stopp. Dette er sikkerhetsgrensen som avslutter bevegelsen hvis stoppen aldri kommer — ikke en normal kjøretid."
+                "en": "The buttons run until you press Stop. This is the safety limit that ends the movement if a stop never arrives, not a normal run time.",
+                "no": "Knappene kjører til du trykker Stopp. Dette er sikkerhetsgrensen som avslutter bevegelsen hvis stoppen aldri kommer, ikke en normal kjøretid."
               },
               "value": 45,
               "min": 5,
@@ -622,6 +686,25 @@
               "units": {
                 "en": "s",
                 "no": "s"
+              }
+            },
+            {
+              "id": "flatSeconds",
+              "type": "number",
+              "label": {
+                "en": "Time to flat",
+                "no": "Tid til flatt"
+              },
+              "value": 30,
+              "min": 5,
+              "max": 120,
+              "units": {
+                "en": "seconds",
+                "no": "sekunder"
+              },
+              "hint": {
+                "en": "How long the flat and preset cards drive downwards. It has to be long enough to reach the end stops from the highest position; once there, the motors simply stop, so a little too much costs nothing. Longer runs are split into pieces that each stay within the maximum run time above.",
+                "no": "Hvor lenge kortene for flat og stilling kjører nedover. Den må være lang nok til å nå endestopp fra høyeste stilling. Vel framme stopper motorene av seg selv, så litt for mye koster ingenting. Lengre kjøringer deles i biter som hver holder seg innenfor maksimal kjøretid over."
               }
             }
           ]

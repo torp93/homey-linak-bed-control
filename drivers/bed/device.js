@@ -43,6 +43,11 @@ const STOP_REASONS = Object.freeze({
 // ikke en normal kjøretid — den slår bare inn hvis stoppen aldri kommer.
 const DEFAULT_MAX_RUN_SECONDS = 45;
 
+// Hvor lenge «flat» kjører nedover. Lang nok til å nå endestopp fra høyeste
+// stilling; vel framme stopper motorene av seg selv, så for mye koster
+// ingenting utover tiden.
+const DEFAULT_FLAT_SECONDS = 30;
+
 // Signalstyrke hadde ingen kilde i normal drift: RSSI følger annonseringen,
 // og en vanlig kommando hopper over annonseringsventingen fordi adressetypen
 // er lagret fra paringen. Flisen ble derfor stående på samme tall i dagevis.
@@ -480,7 +485,9 @@ class BedDevice extends Homey.Device {
 
   // Felles vei for både knapper og Flow-kort. Venter til bevegelsen er helt
   // ferdig — Flow-kortene skal blokkere til «kjør i X sekunder» faktisk er gjort.
-  async runMotor(command, durationSeconds, extraOptions = {}) {
+  // `announce` er av når runFor styrer: da skal triggerne fyre én gang for
+  // hele kjøringen, ikke én gang per bit.
+  async runMotor(command, durationSeconds, { announce = true, ...extraOptions } = {}) {
     // Sikkerhetsgrensen gjelder ALLE veier inn, også Flow-kort — før gjaldt
     // den bare knappene, så en Flow kunne kjøre lenger enn grensen brukeren
     // hadde satt. NaN (manglende Flow-argument) faller også trygt ned her.
@@ -504,7 +511,7 @@ class BedDevice extends Homey.Device {
           // oss for å sende. Oppkobling og bonding tar tid, og kan feile.
           onStarted: () => {
             started = true;
-            this._trigger('linak_bed_started_moving', { section });
+            if (announce) this._trigger('linak_bed_started_moving', { section });
             if (typeof extraOptions.onStarted === 'function') extraOptions.onStarted();
           },
         }));
@@ -517,10 +524,12 @@ class BedDevice extends Homey.Device {
       }
 
       this.log(`${command}: ${result.repeats} skrivinger, stoppet av ${result.stoppedBy || 'kommando'}, RSSI ${result.rssi}`);
-      this._trigger('linak_bed_stopped_moving', {
-        section,
-        reason: STOP_REASONS[result.stoppedBy] || 'the command finished',
-      });
+      if (announce) {
+        this._trigger('linak_bed_stopped_moving', {
+          section,
+          reason: STOP_REASONS[result.stoppedBy] || 'the command finished',
+        });
+      }
       await this._rememberHandles(result);
       await this._rememberAddressType(result);
       await this._reportSignal(result.rssi);
@@ -531,12 +540,75 @@ class BedDevice extends Homey.Device {
       this._onCommandError(error);
       await this._setConnection('error');
       this.error(`${command} feilet`, error.message);
-      if (started) {
+      if (started && announce) {
         this._trigger('linak_bed_stopped_moving', { section, reason: 'the command failed' });
       }
       // Feilen kastes videre slik at Flow-kortet viser den for brukeren.
       throw error;
     }
+  }
+
+  flatSeconds() {
+    const configured = Number(this.getSetting('flatSeconds'));
+    if (Number.isFinite(configured) && configured > 0) return configured;
+    return DEFAULT_FLAT_SECONDS;
+  }
+
+  // Kjører én motor i `seconds` til sammen, delt i biter som hver holder seg
+  // innenfor sikkerhetsgrensen brukeren har satt. Grensen er et vern mot en
+  // kommando som aldri får stopp, slik innstillingen selv sier, ikke et tak på
+  // hvor langt sengen kan bes om å gå, og en stilling har en kjent varighet.
+  //
+  // Bitene er en implementasjonsdetalj, så triggerne fyrer én gang for hele
+  // kjøringen.
+  async runFor(command, seconds) {
+    const total = Math.max(0, Math.min(Number(seconds) || 0, 120));
+    if (!total) return true;
+
+    const limit = this.maxRunSeconds();
+    const section = SECTION_LABELS[command] || command;
+    let announced = false;
+    let done = 0;
+
+    try {
+      while (done < total) {
+        const slice = Math.min(limit, total - done);
+        await this.runMotor(command, slice, {
+          announce: false,
+          onStarted: announced ? undefined : () => {
+            announced = true;
+            this._trigger('linak_bed_started_moving', { section });
+          },
+        });
+        done += slice;
+      }
+    } catch (error) {
+      if (announced) {
+        this._trigger('linak_bed_stopped_moving', { section, reason: 'the command failed' });
+      }
+      throw error;
+    }
+
+    this._trigger('linak_bed_stopped_moving', { section, reason: 'the position was reached' });
+    return true;
+  }
+
+  // Flat er den ENESTE stillingen sengen kan treffe nøyaktig uten å rapportere
+  // hvor den står: begge motorene går til endestopp. Derfor er den ankeret alt
+  // annet måles fra.
+  async goFlat() {
+    await this.runFor('bothDown', this.flatSeconds());
+    return true;
+  }
+
+  // En stilling er flat pluss to kjente kjøretider. Uten utgangspunktet ville
+  // samme tall gitt ulik stilling hver gang.
+  async goToPosition({ back = 0, leg = 0 } = {}) {
+    await this.goFlat();
+    if (back > 0) await this.runFor('backUp', back);
+    if (leg > 0) await this.runFor('legUp', leg);
+    this.log(`Stilling kjørt: rygg ${back} s, bein ${leg} s`);
+    return true;
   }
 
   // Brukes av Flow-betingelsen. Speiler siste kommanderte tilstand.

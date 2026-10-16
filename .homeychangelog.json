@@ -151,7 +151,7 @@
     "no": "Appen kan nå snakke med en Bluetooth-proxy som bruker kryptert API. Lim inn krypteringsnøkkelen fra ESPHome-konfigurasjonen i appinnstillingene, eller la feltet stå tomt for en proxy uten. En ESP32 som allerede gjør noe annet trenger ikke lenger flashes på nytt for å deles med Homey."
   },
   "1.0.41": {
-    "en": "Two new flow triggers: the bed started moving, and the bed stopped moving. Both say which section ran, and the stop also says why it ended, whether that was the stop button, the maximum run time or a failure.",
-    "no": "To nye flow-utløsere: sengen begynte å bevege seg, og sengen sluttet å bevege seg. Begge forteller hvilken seksjon som gikk, og stoppen forteller også hvorfor den tok slutt, enten det var stoppknappen, maksimal kjøretid eller en feil."
+    "en": "Two new flow triggers, the bed started moving and the bed stopped moving, both saying which section ran and why it ended. And two new actions: set the bed flat, which drives both sections to their end stops, and go to a position, which goes flat first and then raises the back and the legs for the times you give. Starting from the end stops is what makes a position repeatable on a bed that cannot report where it is.",
+    "no": "To nye flow-utløsere, sengen begynte å bevege seg og sengen sluttet å bevege seg, som begge forteller hvilken seksjon som gikk og hvorfor den stoppet. Og to nye handlinger: legg sengen flat, som kjører begge seksjonene til endestopp, og kjør til en stilling, som går flat først og deretter hever rygg og bein så lenge du oppgir. At den starter fra endestopp er det som gjør en stilling repeterbar på en seng som ikke kan si hvor den står."
   }
 }
