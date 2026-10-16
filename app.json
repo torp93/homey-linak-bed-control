@@ -344,6 +344,68 @@
             }
           }
         ]
+      },
+      {
+        "id": "linak_bed_command_failed",
+        "title": {
+          "en": "A command to the bed failed",
+          "no": "En kommando til sengen feilet"
+        },
+        "hint": {
+          "en": "Fires when a command does not get through at all, which is not the same as a movement ending. A command that fails while connecting never moves the bed, so it never reports a stop either. This is the early warning that something is wrong with the link, rather than finding out at bedtime.",
+          "no": "Utløses når en kommando ikke kommer fram, noe annet enn at en bevegelse tar slutt. En kommando som feiler under oppkoblingen beveger ingenting, og melder derfor heller ingen stopp. Dette er varselet om at noe er galt med forbindelsen, i stedet for å oppdage det ved sengetid."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "command",
+            "type": "string",
+            "title": {
+              "en": "Command",
+              "no": "Kommando"
+            },
+            "example": {
+              "en": "back up",
+              "no": "back up"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "en": "Reason",
+              "no": "Årsak"
+            },
+            "example": {
+              "en": "The bed did not accept the connection",
+              "no": "The bed did not accept the connection"
+            }
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_no_answer",
+        "title": {
+          "en": "The bed did not answer a measurement",
+          "no": "Sengen svarte ikke på en måling"
+        },
+        "hint": {
+          "en": "The app measures the signal by listening for the bed, which is a real test of whether it is there at all. This fires when that listening finds nothing, so you learn the bed is out of reach before you need it.",
+          "no": "Appen måler signalet ved å lytte etter sengen, som er en ekte test på om den er der i det hele tatt. Dette utløses når lyttingen ikke finner noe, så du vet at sengen er utenfor rekkevidde før du trenger den."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
       }
     ],
     "actions": [
@@ -562,6 +624,42 @@
             }
           }
         ]
+      },
+      {
+        "id": "linak_bed_measure",
+        "title": {
+          "en": "Measure the status now",
+          "no": "Mål statusen nå"
+        },
+        "hint": {
+          "en": "Listens for the bed and reads the proxy, which updates the Bluetooth signal, the WiFi signal and whether the bed answers at all. The card returns at once and the measurement finishes in the background, because it takes twelve seconds. Use it to choose when measuring happens instead of leaving it to the interval in the device settings.",
+          "no": "Lytter etter sengen og leser av proxyen, som oppdaterer Bluetooth-signalet, WiFi-signalet og om sengen svarer i det hele tatt. Kortet svarer med én gang og målingen fullføres i bakgrunnen, siden den tar tolv sekunder. Bruk den til å bestemme selv når det måles, i stedet for å overlate det til intervallet i enhetsinnstillingene."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_reset_connection",
+        "title": {
+          "en": "Reset the connection",
+          "no": "Nullstill tilkoblingen"
+        },
+        "hint": {
+          "en": "Drops the Bluetooth session and the connection to the proxy, so the next command builds both again. This is what the Repair screen does, and what restarting the app does, available to a flow so the app can recover without you opening anything.",
+          "no": "Slipper Bluetooth-økten og forbindelsen til proxyen, så neste kommando bygger begge på nytt. Det er det Reparer-skjermen gjør, og det en appomstart gjør, tilgjengelig for en flow slik at appen kan hente seg inn uten at du åpner noe."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
       }
     ],
     "conditions": [
@@ -576,6 +674,42 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=bed|all_beds"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_condition_moving",
+        "title": {
+          "en": "The bed !{{is|is not}} moving",
+          "no": "Sengen !{{beveger|beveger ikke}} seg"
+        },
+        "hint": {
+          "en": "True while a movement this app started is still running. Use it to keep two flows from fighting over the same motor.",
+          "no": "Sann mens en bevegelse appen startet fortsatt går. Bruk den til å hindre at to flows krangler om samme motor."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_condition_error",
+        "title": {
+          "en": "The bed !{{is|is not}} in an error state",
+          "no": "Sengen !{{er|er ikke}} i feiltilstand"
+        },
+        "hint": {
+          "en": "True when the last command or measurement failed. Pair it with the reset action to let a flow repair the connection by itself.",
+          "no": "Sann når siste kommando eller måling feilet. Sett den sammen med nullstillingshandlingen, så kan en flow reparere forbindelsen selv."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
           }
         ]
       }

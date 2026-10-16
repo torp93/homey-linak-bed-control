@@ -143,6 +143,24 @@ class LinakBedApp extends Homey.App {
     this.homey.flow
       .getConditionCard('linak_bed_condition_light')
       .registerRunListener(({ device }) => device.lightIsOn());
+
+    this.homey.flow
+      .getConditionCard('linak_bed_condition_moving')
+      .registerRunListener(({ device }) => device.isMoving());
+
+    this.homey.flow
+      .getConditionCard('linak_bed_condition_error')
+      .registerRunListener(({ device }) => device.isInError());
+
+    // Målingen tar tolv sekunder og svarer derfor med én gang, som knappen.
+    this.homey.flow
+      .getActionCard('linak_bed_measure')
+      .registerRunListener(({ device }) => device.refreshStatus());
+
+    // Samme jobb som Reparer-skjermen, tilgjengelig for en flow.
+    this.homey.flow
+      .getActionCard('linak_bed_reset_connection')
+      .registerRunListener(({ device }) => device.resetConnection());
   }
 }
 

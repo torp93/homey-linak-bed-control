@@ -180,6 +180,7 @@ class BedDevice extends Homey.Device {
   async measureStatus() {
     const entry = await this._scanForBed();
     if (entry) await this._reportSignal(entry.rssi);
+    else this._trigger('linak_bed_no_answer', {});
     await this._applyReadyState(Boolean(entry));
 
     const wifi = await this._measureWifiOnce().catch(() => null);
@@ -214,6 +215,7 @@ class BedDevice extends Homey.Device {
         }
         if (!entry) {
           this.log(`Sengen annonserte ikke innen ${SIGNAL_SCAN_MS} ms`);
+          this._trigger('linak_bed_no_answer', {});
         }
         if (this._readyAutoEnabled()) await this._applyReadyState(Boolean(entry));
       } catch (error) {
@@ -543,6 +545,10 @@ class BedDevice extends Homey.Device {
       if (started && announce) {
         this._trigger('linak_bed_stopped_moving', { section, reason: 'the command failed' });
       }
+      // Egen trigger, og med vilje ikke den samme: en kommando som feilet UNDER
+      // oppkoblingen beveget aldri noe, og melder derfor ingen stopp i det hele
+      // tatt. Det er nettopp den som er verdt et varsel.
+      this._trigger('linak_bed_command_failed', { command: section, reason: error.message });
       // Feilen kastes videre slik at Flow-kortet viser den for brukeren.
       throw error;
     }
@@ -611,6 +617,15 @@ class BedDevice extends Homey.Device {
     return true;
   }
 
+  // Brukes av Flow-betingelsene. Tilstanden er den samme flisen viser.
+  isMoving() {
+    return this.getCapabilityValue('linak_bed_connection') === 'moving';
+  }
+
+  isInError() {
+    return this.getCapabilityValue('linak_bed_connection') === 'error';
+  }
+
   // Brukes av Flow-betingelsen. Speiler siste kommanderte tilstand.
   lightIsOn() {
     return Boolean(this.getStoreValue('lightOn'));
@@ -649,6 +664,10 @@ class BedDevice extends Homey.Device {
       this._onCommandError(error);
       if (!moving) await this._setConnection('error');
       this.error('Lyskommando feilet', error.message);
+      this._trigger('linak_bed_command_failed', {
+        command: on ? 'light on' : 'light off',
+        reason: error.message,
+      });
       throw error;
     }
   }

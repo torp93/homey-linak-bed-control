@@ -138,7 +138,12 @@ test('hver Flow-trigger enheten fyrer av finnes i manifestet', () => {
       const card = ((manifest.flow || {}).triggers || []).find((c) => c.id === id);
       if (!card) continue;
       const names = new Set((card.tokens || []).map((token) => token.name));
-      for (const [, key] of body.matchAll(/(?:^|[\s,])([A-Za-z_$][\w$]*)\s*[,:]/g)) {
+      // Del paa komma og ta FORSTE navn i hver bit. Et enklere monster leser
+      // verdien i { command: section } som om den var et tokennavn.
+      for (const part of body.split(',')) {
+        const match = part.match(/^\s*([A-Za-z_$][\w$]*)\s*(?::|$)/);
+        if (!match) continue;
+        const key = match[1];
         assert.ok(names.has(key), `${id} far tokenet '${key}', som ikke finnes i kortet`);
       }
     }
