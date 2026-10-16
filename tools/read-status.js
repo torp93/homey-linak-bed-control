@@ -32,6 +32,10 @@ for (let i = 2; i < process.argv.length; i += 1) {
 const host = args.get('host');
 const mac = (args.get('mac') || '').toUpperCase();
 const port = Number(args.get('port') || 6053);
+// Krypteringsnokkelen fra `api: encryption: key:`, naar proxyen har en. Nye
+// ESPHome-oppsett lager den av seg selv.
+const encryptionKey = args.get('key') || '';
+
 const command = args.get('command') || 'backUp';
 const moveSeconds = Number(args.get('seconds') || 6);
 const idleSeconds = Number(args.get('idle') || 3);
@@ -48,7 +52,8 @@ const wakeup = args.get('wakeup') === 'true';
 
 if (!host || !mac) {
   console.error('Usage: node tools/read-status.js --host <proxy ip> --mac <AA:BB:CC:DD:EE:FF>');
-  console.error('       [--channels 18:19,22:23] [--wakeup] [--command backUp] [--seconds 6] [--idle 3]');
+  console.error('       [--key <ESPHome api encryption key>] [--channels 18:19,22:23] [--wakeup]');
+  console.error('       [--command backUp] [--seconds 6] [--idle 3]');
   console.error('');
   console.error('Connects to the bed through an ESPHome Bluetooth proxy, subscribes to its');
   console.error('status channel, and prints every notification it sends while a motor runs.');
@@ -76,6 +81,7 @@ let frames = 0;
   const proxy = new BedProxy({
     host,
     port,
+    encryptionKey: encryptionKey || null,
     log: (...parts) => console.log(stamp(), '[proxy]', ...parts),
   });
   proxy.on('error', (error) => console.error(stamp(), '[proxy error]', error.message));
@@ -94,7 +100,8 @@ let frames = 0;
   });
 
   try {
-    console.log(stamp(), `connecting to ${host}:${port}, bed ${mac}`);
+    console.log(stamp(), `connecting to ${host}:${port}`
+      + `${encryptionKey ? ' (encrypted)' : ''}, bed ${mac}`);
 
     // Adressetypen er kjent: sengene bruker random static. Da slipper vi å
     // vente på en annonsering først.

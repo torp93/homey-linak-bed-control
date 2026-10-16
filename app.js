@@ -4,8 +4,8 @@ const Homey = require('homey');
 const { BedProxy } = require('./lib/bed-proxy');
 const { EsphomeApiClient } = require('./lib/esphome-api');
 const {
-  resolveProxyConfig, isValidHost, isValidPort,
-  SETTING_HOST, SETTING_PORT, DEFAULT_PORT,
+  resolveProxyConfig, isValidHost, isValidKey, isValidPort, cleanKey,
+  SETTING_HOST, SETTING_PORT, SETTING_KEY, DEFAULT_PORT,
 } = require('./lib/proxy-config');
 
 class LinakBedApp extends Homey.App {
@@ -16,7 +16,7 @@ class LinakBedApp extends Homey.App {
     // Endrer brukeren proxy-adressen, rives den gamle klienten ned slik at
     // neste kall bygger en ny mot riktig vert.
     this.homey.settings.on('set', (key) => {
-      if (key === SETTING_HOST || key === SETTING_PORT) this.resetProxy();
+      if ([SETTING_HOST, SETTING_PORT, SETTING_KEY].includes(key)) this.resetProxy();
     });
 
     const { host, port, source } = resolveProxyConfig(this.homey.settings);
@@ -27,7 +27,7 @@ class LinakBedApp extends Homey.App {
   // for langt unna soverommet til at dens egen BLE er brukbar mot sengene.
   getProxy() {
     if (!this._proxy) {
-      const { host, port } = resolveProxyConfig(this.homey.settings);
+      const { host, port, key } = resolveProxyConfig(this.homey.settings);
       // Fersk installasjon uten lagret adresse. Uten denne beskjeden ville
       // brukeren fått «EsphomeApiClient krever host» ut av et Flow-kort.
       if (!host) {
@@ -36,10 +36,12 @@ class LinakBedApp extends Homey.App {
       this._proxy = new BedProxy({
         host,
         port,
+        encryptionKey: key,
         log: (...args) => this.log('[proxy]', ...args),
       });
       this._proxy.on('error', (error) => this.error('Proxy-feil', error));
-      this.log(`ESPHome BLE-proxy klient opprettet mot ${host}:${port}`);
+      this.log(`ESPHome BLE-proxy klient opprettet mot ${host}:${port}`
+        + `${key ? ' (kryptert)' : ''}`);
     }
     return this._proxy;
   }
@@ -47,13 +49,17 @@ class LinakBedApp extends Homey.App {
   // Kobler til, henter enhetsinfo og kobler ned igjen — ingen BLE involvert.
   // Ligger her og ikke i api.js fordi både innstillingssiden og paringen bruker
   // den; en seng som pares skal ikke kunne godta en proxy innstillingene avviser.
-  async testProxyConnection(host, port = DEFAULT_PORT) {
+  async testProxyConnection(host, port = DEFAULT_PORT, encryptionKey = '') {
     if (!isValidHost(host)) throw new Error('Invalid address');
     if (!isValidPort(port)) throw new Error('Invalid port');
+    if (!isValidKey(encryptionKey)) {
+      throw new Error('That does not look like an ESPHome encryption key. It is 32 bytes of base64, as in the api: encryption: key: line.');
+    }
 
     const client = new EsphomeApiClient({
       host: host.trim(),
       port,
+      encryptionKey: cleanKey(encryptionKey) || null,
       clientInfo: 'homey-linak-bed-test',
       log: (...args) => this.log('[test]', ...args),
     });

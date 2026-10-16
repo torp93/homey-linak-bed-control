@@ -35,12 +35,16 @@ for (let i = 2; i < process.argv.length; i += 1) {
 const host = args.get('host');
 const mac = (args.get('mac') || '').toUpperCase();
 const port = Number(args.get('port') || 6053);
+// Krypteringsnokkelen fra `api: encryption: key:`, naar proxyen har en. Nye
+// ESPHome-oppsett lager den av seg selv.
+const encryptionKey = args.get('key') || '';
+
 const holdSeconds = Number(args.get('hold') || 6);
 const leadInSeconds = Number(args.get('leadin') || 20);
 
 if (!host || !mac) {
   console.error('Usage: node tools/try-memory.js --host <proxy ip> --mac <AA:BB:CC:DD:EE:FF>');
-  console.error('       [--hold 6] [--leadin 20]');
+  console.error('       [--key <ESPHome api encryption key>] [--hold 6] [--leadin 20]');
   console.error('');
   console.error('Tries the published LINAK memory RECALL codes one by one and lets the bed');
   console.error('announce each one by blinking its light. Nothing is stored or overwritten.');
@@ -67,6 +71,7 @@ const stamp = () => String(((Date.now() - started) / 1000).toFixed(1)).padStart(
   const client = new EsphomeApiClient({
     host,
     port,
+    encryptionKey: encryptionKey || null,
     clientInfo: 'linak-memory-probe',
     log: () => {},
   });

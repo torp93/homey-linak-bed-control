@@ -133,6 +133,14 @@ connection** button that verifies the node is reachable and has
 `bluetooth_proxy` enabled. The same address is in app settings afterwards, if
 the proxy ever moves.
 
+**Encrypted API.** If the proxy has an `api: encryption: key:` line, paste that
+key into the field below the port. Leave it empty for a plaintext node, which
+is what the firmware above installs. The app speaks the Noise protocol itself
+(`Noise_NNpsk0_25519_ChaChaPoly_SHA256`), with no extra dependencies, so an
+ESP32 that already serves Home Assistant can be shared with Homey instead of
+being reflashed. New ESPHome configurations generate a key by default, so this
+is the normal case for a proxy that existed before this app.
+
 ## What was learned about the protocol
 
 Everything below was verified against real hardware. Several points contradict

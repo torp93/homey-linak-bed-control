@@ -3,7 +3,8 @@
 const Homey = require('homey');
 const { isLinakBed } = require('../../lib/linak-bed-protocol');
 const {
-  SETTING_HOST, SETTING_PORT, isValidHost, isValidPort, resolveProxyConfig,
+  SETTING_HOST, SETTING_PORT, SETTING_KEY,
+  cleanKey, isValidHost, isValidKey, isValidPort, resolveProxyConfig,
 } = require('../../lib/proxy-config');
 
 class BedDriver extends Homey.Driver {
@@ -12,23 +13,26 @@ class BedDriver extends Homey.Driver {
   // paringen er bare det første stedet brukeren får sjansen til å sette den.
   async onPair(session) {
     session.setHandler('getProxy', () => {
-      const { host, port } = resolveProxyConfig(this.homey.settings);
-      return { host: host || '', port };
+      const { host, port, key } = resolveProxyConfig(this.homey.settings);
+      return { host: host || '', port, key: key || '' };
     });
 
-    session.setHandler('testProxy', ({ host, port }) =>
-      this.homey.app.testProxyConnection(host, port));
+    session.setHandler('testProxy', ({ host, port, key }) =>
+      this.homey.app.testProxyConnection(host, port, key));
 
-    session.setHandler('saveProxy', async ({ host, port }) => {
+    session.setHandler('saveProxy', async ({ host, port, key }) => {
       const address = String(host || '').trim();
       const number = Number(port);
+      const secret = cleanKey(key);
       // Engelsk: vises ordrett i paringsvisningen, og engelsk er grunnspråket.
       if (!isValidHost(address)) throw new Error('That address does not look valid.');
       if (!isValidPort(number)) throw new Error('That port does not look valid.');
+      if (!isValidKey(secret)) throw new Error('That does not look like an ESPHome encryption key.');
       // Å skrive disse to innstillingene får app.js til å kaste den bufrede
       // klienten, så skanningen som følger går til adressen som nettopp ble satt.
       await this.homey.settings.set(SETTING_HOST, address);
       await this.homey.settings.set(SETTING_PORT, number);
+      await this.homey.settings.set(SETTING_KEY, secret);
       this.log('Proxy-adresse satt under paring', { host: address, port: number });
       return true;
     });
@@ -83,20 +87,23 @@ class BedDriver extends Homey.Driver {
     // Adressehåndteringen er den samme som i paringen, med vilje: én vei inn
     // til innstillingene, én validering.
     session.setHandler('getProxy', () => {
-      const { host, port } = resolveProxyConfig(this.homey.settings);
-      return { host: host || '', port };
+      const { host, port, key } = resolveProxyConfig(this.homey.settings);
+      return { host: host || '', port, key: key || '' };
     });
 
-    session.setHandler('testProxy', ({ host, port }) =>
-      this.homey.app.testProxyConnection(host, port));
+    session.setHandler('testProxy', ({ host, port, key }) =>
+      this.homey.app.testProxyConnection(host, port, key));
 
-    session.setHandler('saveProxy', async ({ host, port }) => {
+    session.setHandler('saveProxy', async ({ host, port, key }) => {
       const address = String(host || '').trim();
       const number = Number(port);
+      const secret = cleanKey(key);
       if (!isValidHost(address)) throw new Error('That address does not look valid.');
       if (!isValidPort(number)) throw new Error('That port does not look valid.');
+      if (!isValidKey(secret)) throw new Error('That does not look like an ESPHome encryption key.');
       await this.homey.settings.set(SETTING_HOST, address);
       await this.homey.settings.set(SETTING_PORT, number);
+      await this.homey.settings.set(SETTING_KEY, secret);
       this.log('Proxy-adresse satt fra reparasjon', { host: address, port: number });
       return true;
     });

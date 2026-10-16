@@ -44,6 +44,9 @@
   <label for="port" id="portLabel"></label>
   <input id="port" type="number" min="1" max="65535" value="6053">
 
+  <label for="key" id="keyLabel"></label>
+  <input id="key" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+
   <div class="buttons">
     <button id="test"></button>
     <button id="save" class="primary"></button>
@@ -75,6 +78,7 @@
           + 'where the Bluetooth proxy is, and a session that has got stuck.',
       hostLabel: 'Proxy address',
       portLabel: 'Port (native API, normally 6053)',
+      keyLabel: 'Encryption key (leave empty if the proxy does not use one)',
       test: 'Test the connection',
       save: 'Save address',
       resetTitle: 'Reset the connection',
@@ -90,6 +94,7 @@
       testing: 'Contacting the proxy…',
       invalidHost: 'Enter a valid IP address or hostname.',
       invalidPort: 'Port must be between 1 and 65535.',
+      invalidKey: 'The encryption key is 32 bytes of base64, copied from the api: encryption: key: line in the ESPHome configuration.',
       failed: 'Could not reach it: ',
       noProxy: 'Connected, but this device does not have bluetooth_proxy enabled.',
       saved: 'Address saved.',
@@ -111,6 +116,7 @@
           + 'hvor Bluetooth-proxyen er, og en økt som har satt seg fast.',
       hostLabel: 'Proxy-adresse',
       portLabel: 'Port (native API, normalt 6053)',
+      keyLabel: 'Krypteringsnøkkel (la stå tom hvis proxyen ikke bruker en)',
       test: 'Test tilkoblingen',
       save: 'Lagre adressen',
       resetTitle: 'Nullstill tilkoblingen',
@@ -126,6 +132,7 @@
       testing: 'Kobler til proxyen …',
       invalidHost: 'Skriv inn en gyldig IP-adresse eller vertsnavn.',
       invalidPort: 'Porten må være mellom 1 og 65535.',
+      invalidKey: 'Krypteringsnøkkelen er 32 byte base64, kopiert fra linja api: encryption: key: i ESPHome-konfigurasjonen.',
       failed: 'Fikk ikke kontakt: ',
       noProxy: 'Tilkoblet, men denne enheten har ikke bluetooth_proxy slått på.',
       saved: 'Adressen er lagret.',
@@ -159,6 +166,7 @@
 
   const hostEl = document.getElementById('host');
   const portEl = document.getElementById('port');
+  const keyEl = document.getElementById('key');
   const resultEl = document.getElementById('result');
   const testBtn = document.getElementById('test');
   const saveBtn = document.getElementById('save');
@@ -166,7 +174,7 @@
   const handlesBtn = document.getElementById('handles');
   const bondBtn = document.getElementById('bond');
 
-  for (const key of ['lead', 'hostLabel', 'portLabel', 'resetTitle', 'resetHint',
+  for (const key of ['lead', 'hostLabel', 'portLabel', 'keyLabel', 'resetTitle', 'resetHint',
     'handlesTitle', 'handlesHint', 'bondTitle', 'bondHint']) {
     document.getElementById(key).textContent = T[key];
   }
@@ -185,6 +193,7 @@
     if (error || !current) return;
     if (current.host) hostEl.value = current.host;
     if (current.port) portEl.value = current.port;
+    if (current.key) keyEl.value = current.key;
   });
 
   function readInputs() {
@@ -192,7 +201,9 @@
     const port = Number(portEl.value || 6053);
     if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show(T.invalidHost, 'bad'); return null; }
     if (!Number.isInteger(port) || port < 1 || port > 65535) { show(T.invalidPort, 'bad'); return null; }
-    return { host: host, port: port };
+    const key = keyEl.value.trim().replace(/^["']|["']$/g, '');
+    if (key && !/^[A-Za-z0-9+/]{43}=$/.test(key)) { show(T.invalidKey, 'bad'); return null; }
+    return { host: host, port: port, key: key };
   }
 
   testBtn.addEventListener('click', () => {

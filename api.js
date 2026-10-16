@@ -7,6 +7,7 @@ module.exports = {
     return homey.app.testProxyConnection(
       String(query.host || '').trim(),
       Number(query.port || 6053),
+      String(query.key || ''),
     );
   },
 };

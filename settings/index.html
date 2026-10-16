@@ -36,6 +36,9 @@
   <label data-i18n="portLabel">Port</label>
   <input type="number" id="port" placeholder="6053" min="1" max="65535" />
 
+  <label data-i18n="keyLabel">Encryption key</label>
+  <input type="text" id="key" autocapitalize="off" spellcheck="false" />
+
   <div class="row">
     <button id="test" data-i18n="test">Test connection</button>
     <button id="save" class="primary" data-i18n="save">Save</button>
@@ -49,16 +52,19 @@
         title: 'ESPHome Bluetooth proxy',
         hint: 'This app reaches the bed through an ESP32 running ESPHome with '
             + 'bluetooth_proxy, not through Homey’s own Bluetooth. Enter the address '
-            + 'of that ESP32. Place it near the bed — below −70 dBm the link gets '
+            + 'of that ESP32. Place it near the bed, for below -70 dBm the link gets '
             + 'unreliable. Use a fixed IP so it does not move.',
         hostLabel: 'Address',
         portLabel: 'Port (native API, normally 6053)',
+        keyLabel: 'Encryption key (leave empty if the proxy does not use one)',
         test: 'Test connection',
         save: 'Save',
         testing: 'Contacting the proxy…',
         saved: 'Saved.',
         invalidHost: 'Enter a valid IP address or hostname.',
         invalidPort: 'Port must be between 1 and 65535.',
+        invalidKey: 'The encryption key is 32 bytes of base64, copied from the '
+                  + 'api: encryption: key: line in the ESPHome configuration.',
         noProxy: 'Connected, but this device has no bluetooth_proxy enabled. '
                + 'Add bluetooth_proxy and esp32_ble_tracker to its ESPHome config.',
         failed: 'Could not reach the proxy'
@@ -67,16 +73,19 @@
         title: 'ESPHome Bluetooth-proxy',
         hint: 'Appen når sengen gjennom en ESP32 som kjører ESPHome med '
             + 'bluetooth_proxy, ikke gjennom Homeys egen Bluetooth. Skriv inn adressen '
-            + 'til denne ESP32-en. Plasser den nær sengen — under −70 dBm blir '
+            + 'til denne ESP32-en. Plasser den nær sengen, for under -70 dBm blir '
             + 'forbindelsen ustabil. Bruk fast IP så den ikke flytter seg.',
         hostLabel: 'Adresse',
         portLabel: 'Port (native API, normalt 6053)',
+        keyLabel: 'Krypteringsnøkkel (la stå tom hvis proxyen ikke bruker en)',
         test: 'Test tilkobling',
         save: 'Lagre',
         testing: 'Kontakter proxyen…',
         saved: 'Lagret.',
         invalidHost: 'Skriv inn en gyldig IP-adresse eller vertsnavn.',
         invalidPort: 'Porten må være mellom 1 og 65535.',
+        invalidKey: 'Krypteringsnøkkelen er 32 byte base64, kopiert fra linja '
+                  + 'api: encryption: key: i ESPHome-konfigurasjonen.',
         noProxy: 'Tilkoblet, men denne enheten har ikke bluetooth_proxy slått på. '
                + 'Legg til bluetooth_proxy og esp32_ble_tracker i ESPHome-konfigen.',
         failed: 'Fikk ikke kontakt med proxyen'
@@ -94,17 +103,22 @@
 
       const hostEl = document.getElementById('host');
       const portEl = document.getElementById('port');
+      const keyEl = document.getElementById('key');
       const resultEl = document.getElementById('result');
 
       Homey.get('proxyHost', function (err, value) { if (!err && value) hostEl.value = value; });
       Homey.get('proxyPort', function (err, value) { portEl.value = (!err && value) ? value : 6053; });
+      Homey.get('proxyKey', function (err, value) { if (!err && value) keyEl.value = value; });
 
       function readInputs() {
         const host = hostEl.value.trim();
         const port = Number(portEl.value || 6053);
         if (!/^[a-zA-Z0-9._-]+$/.test(host)) { show(T.invalidHost, 'bad'); return null; }
         if (!Number.isInteger(port) || port < 1 || port > 65535) { show(T.invalidPort, 'bad'); return null; }
-        return { host: host, port: port };
+        // Tom er gyldig: proxyen fra nettinstallasjonen kjorer ukryptert.
+        const key = keyEl.value.trim().replace(/^["']|["']$/g, '');
+        if (key && !/^[A-Za-z0-9+/]{43}=$/.test(key)) { show(T.invalidKey, 'bad'); return null; }
+        return { host: host, port: port, key: key };
       }
 
       function show(text, cls) {
@@ -120,7 +134,8 @@
         const button = this;
         Homey.api(
           'GET',
-          '/testProxy?host=' + encodeURIComponent(input.host) + '&port=' + input.port,
+          '/testProxy?host=' + encodeURIComponent(input.host) + '&port=' + input.port
+            + '&key=' + encodeURIComponent(input.key),
           null,
           function (err, result) {
             button.disabled = false;
@@ -143,7 +158,10 @@
           if (err) { show(String(err.message || err), 'bad'); return; }
           Homey.set('proxyPort', input.port, function (err2) {
             if (err2) { show(String(err2.message || err2), 'bad'); return; }
-            show(T.saved, 'ok');
+            Homey.set('proxyKey', input.key, function (err3) {
+              if (err3) { show(String(err3.message || err3), 'bad'); return; }
+              show(T.saved, 'ok');
+            });
           });
         });
       });
