@@ -1,4 +1,5 @@
-# Thomas' eget nett. Denne fila er gitignorert med vilje.
+# Thomas' eget nett. Denne fila ER i repoet, så ingen hemmeligheter her:
+# nøkler og passord går via !secret, og secrets.yaml er gitignorert.
 #
 # linak-bed-proxy.yaml i repoet har 192.168.1.50 som plassholder, med
 # kommentaren «tilpass ditt nett». Den skal fortsette å være en mal, så
@@ -18,3 +19,11 @@ wifi:
     dns1: 192.168.10.1
 
   use_address: 192.168.10.14
+
+# Kryptert API. Base-konfigurasjonen i repoet lar dette stå åpent, fordi
+# nettinstallasjonen flashes av fremmede og en delt nøkkel der ville vært
+# meningsløs. Her hjemme er den på, og appen har samme nøkkel i
+# innstillingene sine.
+api:
+  encryption:
+    key: !secret api_encryption_key
