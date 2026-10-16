@@ -145,5 +145,9 @@
   "1.0.39": {
     "en": "The under-bed light is now also available as a separate device with a plain on/off switch, so it can be controlled by voice through Google Home or Alexa. The bed itself keeps its light button, and the two stay in step.",
     "no": "Undersengslyset finnes nå også som egen enhet med en ren av/på-bryter, slik at det kan styres med stemmen gjennom Google Home eller Alexa. Sengen beholder lysknappen sin, og de to følger hverandre."
+  },
+  "1.0.40": {
+    "en": "The app can now talk to a Bluetooth proxy that uses an encrypted API. Paste the encryption key from the ESPHome configuration into app settings, or leave it empty for a proxy without one. An ESP32 that already serves something else no longer has to be reflashed to be shared with Homey.",
+    "no": "Appen kan nå snakke med en Bluetooth-proxy som bruker kryptert API. Lim inn krypteringsnøkkelen fra ESPHome-konfigurasjonen i appinnstillingene, eller la feltet stå tomt for en proxy uten. En ESP32 som allerede gjør noe annet trenger ikke lenger flashes på nytt for å deles med Homey."
   }
 }
