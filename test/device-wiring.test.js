@@ -119,3 +119,30 @@ test('hver Homey.emit i paringsvisningene har en setHandler i driveren', () => {
 
   assert.ok(checked > 0, 'fant ingen Homey.emit i visningene å sjekke');
 });
+// Samme feilklasse en tredje gang: et kortnavn som ikke finnes noe sted.
+// getDeviceTriggerCard kaster da, og uten denne testen ville en skrivefeil i
+// en trigger-id bare blitt en linje i enhetsloggen som ingen leser.
+test('hver Flow-trigger enheten fyrer av finnes i manifestet', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'app.json'), 'utf8'));
+  const declared = new Set(((manifest.flow || {}).triggers || []).map((card) => card.id));
+
+  let checked = 0;
+  for (const [name, file] of DEVICES) {
+    const source = fs.readFileSync(file, 'utf8');
+    for (const [, id] of source.matchAll(/_trigger\(\s*'([^']+)'/g)) {
+      checked += 1;
+      assert.ok(declared.has(id), `${name} fyrer '${id}', som ikke er erklaert i app.json`);
+    }
+    // Og tokenene: et navn som ikke staar i kortet blir stille borte i flowen.
+    for (const [, id, body] of source.matchAll(/_trigger\(\s*'([^']+)'\s*,\s*\{([^}]*)\}/g)) {
+      const card = ((manifest.flow || {}).triggers || []).find((c) => c.id === id);
+      if (!card) continue;
+      const names = new Set((card.tokens || []).map((token) => token.name));
+      for (const [, key] of body.matchAll(/(?:^|[\s,])([A-Za-z_$][\w$]*)\s*[,:]/g)) {
+        assert.ok(names.has(key), `${id} far tokenet '${key}', som ikke finnes i kortet`);
+      }
+    }
+  }
+
+  assert.ok(checked > 0, 'fant ingen Flow-triggere a sjekke');
+});

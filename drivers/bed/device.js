@@ -17,6 +17,28 @@ const MOTOR_CAPABILITIES = Object.freeze({
   linak_bed_leg_relief: 'legRelief',
 });
 
+// Hva Flow-tokenet skal si om hvilken seksjon som gikk. Engelsk, som resten
+// av det brukeren ser.
+const SECTION_LABELS = Object.freeze({
+  legUp: 'legs up',
+  legDown: 'legs down',
+  backUp: 'back up',
+  backDown: 'back down',
+  bothUp: 'both up',
+  bothDown: 'both down',
+  sitUp: 'sitting up',
+  legRelief: 'leg relief',
+});
+
+// Hvorfor bevegelsen tok slutt. Proxyen bruker norske interne navn, og dette
+// er oversettelsen til det som havner i en Flow. 'erstattet' står ikke her:
+// da overtok et nyere trykk, og sengen går fortsatt.
+const STOP_REASONS = Object.freeze({
+  stopp: 'stop was pressed',
+  tidsgrense: 'the maximum run time was reached',
+  slettet: 'the bed was removed',
+});
+
 // Knappene kjører til brukeren trykker stopp. Grensen er et sikkerhetsnett,
 // ikke en normal kjøretid — den slår bare inn hvis stoppen aldri kommer.
 const DEFAULT_MAX_RUN_SECONDS = 45;
@@ -313,6 +335,17 @@ class BedDevice extends Homey.Device {
     return this.homey.app.getProxy();
   }
 
+  // Fyr-og-glem, som varslingen til gruppa og lysenheten: en feil i et
+  // Flow-kort skal aldri velte kommandoen som er på vei til sengen.
+  _trigger(id, tokens) {
+    try {
+      this.homey.flow.getDeviceTriggerCard(id).trigger(this, tokens)
+        .catch((error) => this.error(`Trigger ${id} feilet`, error.message));
+    } catch (error) {
+      this.error(`Trigger ${id} finnes ikke`, error.message);
+    }
+  }
+
   async _setConnection(state) {
     if (!this.hasCapability('linak_bed_connection')) return;
     await this.setCapabilityValue('linak_bed_connection', state).catch(() => {});
@@ -457,9 +490,24 @@ class BedDevice extends Homey.Device {
       : limit;
 
     await this._setConnection('moving');
+    const section = SECTION_LABELS[command] || command;
+    // Har vi aldri meldt start, skal vi heller ikke melde stopp. En kommando
+    // som feiler under oppkoblingen har ikke beveget noe som helst.
+    let started = false;
+
     try {
       const result = await this._proxy().sendCommand(this._mac, command,
-        this._commandOptions({ durationSeconds: seconds, ...extraOptions }));
+        this._commandOptions({
+          durationSeconds: seconds,
+          ...extraOptions,
+          // Triggeren venter på at sengen FAKTISK går, ikke på at vi bestemmer
+          // oss for å sende. Oppkobling og bonding tar tid, og kan feile.
+          onStarted: () => {
+            started = true;
+            this._trigger('linak_bed_started_moving', { section });
+            if (typeof extraOptions.onStarted === 'function') extraOptions.onStarted();
+          },
+        }));
 
       if (result.stoppedBy === 'erstattet') {
         // Et nyere trykk tok over. Det trykket eier tilstanden nå — å sette
@@ -469,6 +517,10 @@ class BedDevice extends Homey.Device {
       }
 
       this.log(`${command}: ${result.repeats} skrivinger, stoppet av ${result.stoppedBy || 'kommando'}, RSSI ${result.rssi}`);
+      this._trigger('linak_bed_stopped_moving', {
+        section,
+        reason: STOP_REASONS[result.stoppedBy] || 'the command finished',
+      });
       await this._rememberHandles(result);
       await this._rememberAddressType(result);
       await this._reportSignal(result.rssi);
@@ -479,6 +531,9 @@ class BedDevice extends Homey.Device {
       this._onCommandError(error);
       await this._setConnection('error');
       this.error(`${command} feilet`, error.message);
+      if (started) {
+        this._trigger('linak_bed_stopped_moving', { section, reason: 'the command failed' });
+      }
       // Feilen kastes videre slik at Flow-kortet viser den for brukeren.
       throw error;
     }

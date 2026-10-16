@@ -1,6 +1,6 @@
 {
   "id": "com.thomastorp.linak-bed",
-  "version": "1.0.40",
+  "version": "1.0.41",
   "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
@@ -268,6 +268,84 @@
     }
   },
   "flow": {
+    "triggers": [
+      {
+        "id": "linak_bed_started_moving",
+        "title": {
+          "en": "The bed started moving",
+          "no": "Sengen begynte å bevege seg"
+        },
+        "hint": {
+          "en": "Fires when the bed actually starts moving, whether the command came from a button, a flow or the group device. Connecting to the bed can take a second or two, and this waits for the movement itself.",
+          "no": "Utløses når sengen faktisk begynner å bevege seg, enten kommandoen kom fra en knapp, et flow eller gruppeenheten. Oppkoblingen kan ta et sekund eller to, og dette venter på selve bevegelsen."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "section",
+            "type": "string",
+            "title": {
+              "en": "Section",
+              "no": "Seksjon"
+            },
+            "example": {
+              "en": "back up",
+              "no": "back up"
+            }
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_stopped_moving",
+        "title": {
+          "en": "The bed stopped moving",
+          "no": "Sengen sluttet å bevege seg"
+        },
+        "hint": {
+          "en": "Fires when the movement ends. A new press that takes over does not count as a stop, because the bed keeps moving.",
+          "no": "Utløses når bevegelsen tar slutt. Et nytt trykk som overtar teller ikke som stopp, for da går sengen videre."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "section",
+            "type": "string",
+            "title": {
+              "en": "Section",
+              "no": "Seksjon"
+            },
+            "example": {
+              "en": "back up",
+              "no": "back up"
+            }
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "title": {
+              "en": "Reason",
+              "no": "Årsak"
+            },
+            "example": {
+              "en": "stop was pressed",
+              "no": "stop was pressed"
+            }
+          }
+        ]
+      }
+    ],
     "actions": [
       {
         "id": "linak_bed_move",

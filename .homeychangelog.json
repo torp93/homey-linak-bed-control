@@ -149,5 +149,9 @@
   "1.0.40": {
     "en": "The app can now talk to a Bluetooth proxy that uses an encrypted API. Paste the encryption key from the ESPHome configuration into app settings, or leave it empty for a proxy without one. An ESP32 that already serves something else no longer has to be reflashed to be shared with Homey.",
     "no": "Appen kan nå snakke med en Bluetooth-proxy som bruker kryptert API. Lim inn krypteringsnøkkelen fra ESPHome-konfigurasjonen i appinnstillingene, eller la feltet stå tomt for en proxy uten. En ESP32 som allerede gjør noe annet trenger ikke lenger flashes på nytt for å deles med Homey."
+  },
+  "1.0.41": {
+    "en": "Two new flow triggers: the bed started moving, and the bed stopped moving. Both say which section ran, and the stop also says why it ended, whether that was the stop button, the maximum run time or a failure.",
+    "no": "To nye flow-utløsere: sengen begynte å bevege seg, og sengen sluttet å bevege seg. Begge forteller hvilken seksjon som gikk, og stoppen forteller også hvorfor den tok slutt, enten det var stoppknappen, maksimal kjøretid eller en feil."
   }
 }
