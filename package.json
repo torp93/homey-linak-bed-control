@@ -5,7 +5,7 @@
   "description": "LINAK TD4/TD5 adjustable bed for Homey Pro, over an ESPHome Bluetooth proxy",
   "main": "app.js",
   "scripts": {
-    "test": "node --test test/linak-bed-protocol.test.js test/proxy-config.test.js test/esphome-wire.test.js test/esphome-noise.test.js test/capability-migration.test.js test/bed-proxy.test.js test/device-wiring.test.js"
+    "test": "node --test test/linak-bed-protocol.test.js test/proxy-config.test.js test/esphome-wire.test.js test/esphome-noise.test.js test/capability-migration.test.js test/bed-proxy.test.js test/device-wiring.test.js test/signal-threshold.test.js"
   },
   "author": "Thomas Torp",
   "license": "MIT",

@@ -2,6 +2,7 @@
 
 const Homey = require('homey');
 const { BedProxy } = require('./lib/bed-proxy');
+const { crossedBelow } = require('./lib/signal-threshold');
 const { EsphomeApiClient } = require('./lib/esphome-api');
 const {
   resolveProxyConfig, isValidHost, isValidKey, isValidPort, cleanKey,
@@ -143,6 +144,17 @@ class LinakBedApp extends Homey.App {
     this.homey.flow
       .getConditionCard('linak_bed_condition_light')
       .registerRunListener(({ device }) => device.lightIsOn());
+
+    // Terskelen bor i flowen, ikke i enheten: to flows kan følge samme seng med
+    // hvert sitt nivå. Enheten sender med både ny og forrige verdi, og her
+    // avgjøres det om nettopp denne målingen krysset nettopp dette nivået.
+    this.homey.flow
+      .getDeviceTriggerCard('linak_bed_signal_below')
+      .registerRunListener((args, state) => crossedBelow(state, args.level));
+
+    this.homey.flow
+      .getConditionCard('linak_bed_condition_signal_below')
+      .registerRunListener(({ device, level }) => device.signalBelow(level));
 
     this.homey.flow
       .getConditionCard('linak_bed_condition_moving')

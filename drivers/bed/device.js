@@ -344,9 +344,9 @@ class BedDevice extends Homey.Device {
 
   // Fyr-og-glem, som varslingen til gruppa og lysenheten: en feil i et
   // Flow-kort skal aldri velte kommandoen som er på vei til sengen.
-  _trigger(id, tokens) {
+  _trigger(id, tokens, state = undefined) {
     try {
-      this.homey.flow.getDeviceTriggerCard(id).trigger(this, tokens)
+      this.homey.flow.getDeviceTriggerCard(id).trigger(this, tokens, state)
         .catch((error) => this.error(`Trigger ${id} feilet`, error.message));
     } catch (error) {
       this.error(`Trigger ${id} finnes ikke`, error.message);
@@ -404,7 +404,26 @@ class BedDevice extends Homey.Device {
   async _reportSignal(rssi) {
     if (!Number.isFinite(rssi)) return;
     if (!this.hasCapability('linak_bed_signal')) return;
+
+    // Forrige verdi før den overskrives: terskelkortet skal fyre på selve
+    // KRYSSINGEN, ikke på hver måling som ligger under nivået. Hvilket nivå det
+    // er vet bare den enkelte flowen, så sammenligningen gjøres i app.js med
+    // tilstanden vi sender med her.
+    const previous = this.getCapabilityValue('linak_bed_signal');
     await this.setCapabilityValue('linak_bed_signal', rssi).catch(() => {});
+
+    this._trigger('linak_bed_signal_below', { signal: rssi }, {
+      signal: rssi,
+      previous: Number.isFinite(previous) ? previous : null,
+    });
+  }
+
+  // Brukes av terskel-betingelsen. Siste målte verdi, ikke en fersk måling:
+  // en måling tar tolv sekunder, og en betingelse skal svare med én gang.
+  signalBelow(level) {
+    const value = this.getCapabilityValue('linak_bed_signal');
+    if (!Number.isFinite(value)) return false;
+    return value < Number(level);
   }
 
   // setAvailable() er en IPC-rundtur mot Homey-kjernen — unødvendig når

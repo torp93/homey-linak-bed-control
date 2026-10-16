@@ -406,6 +406,51 @@
             "filter": "driver_id=bed"
           }
         ]
+      },
+      {
+        "id": "linak_bed_signal_below",
+        "title": {
+          "en": "The Bluetooth signal fell below a level",
+          "no": "Bluetooth-signalet falt under et nivå"
+        },
+        "titleFormatted": {
+          "en": "The Bluetooth signal fell below [[level]] dBm",
+          "no": "Bluetooth-signalet falt under [[level]] dBm"
+        },
+        "hint": {
+          "en": "Fires on the measurement where the signal crosses your level going down, not on every measurement that is below it. Homey gives thresholds like this for the WiFi signal by itself, but the Bluetooth signal needed its own capability to get the right icon, and so it needs its own card too.",
+          "no": "Utløses på målingen der signalet krysser nivået ditt på vei ned, ikke på hver eneste måling som ligger under. Homey gir slike terskler av seg selv for WiFi-signalet, men Bluetooth-signalet måtte bli en egen kapabilitet for å få riktig ikon, og da trenger det også sitt eget kort."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          },
+          {
+            "name": "level",
+            "type": "number",
+            "min": -110,
+            "max": -30,
+            "step": 1,
+            "value": -85,
+            "title": {
+              "en": "Level, dBm",
+              "no": "Nivå, dBm"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "signal",
+            "type": "number",
+            "title": {
+              "en": "Signal, dBm",
+              "no": "Signal, dBm"
+            },
+            "example": -88
+          }
+        ]
       }
     ],
     "actions": [
@@ -710,6 +755,40 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=bed"
+          }
+        ]
+      },
+      {
+        "id": "linak_bed_condition_signal_below",
+        "title": {
+          "en": "The Bluetooth signal !{{is|is not}} below a level",
+          "no": "Bluetooth-signalet !{{er|er ikke}} under et nivå"
+        },
+        "titleFormatted": {
+          "en": "The Bluetooth signal !{{is|is not}} below [[level]] dBm",
+          "no": "Bluetooth-signalet !{{er|er ikke}} under [[level]] dBm"
+        },
+        "hint": {
+          "en": "Uses the last measurement, not a fresh one, since measuring takes twelve seconds. Put the measure action before it if you need the number to be current.",
+          "no": "Bruker siste måling, ikke en fersk, siden en måling tar tolv sekunder. Sett målekortet foran hvis tallet må være ferskt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=bed"
+          },
+          {
+            "name": "level",
+            "type": "number",
+            "min": -110,
+            "max": -30,
+            "step": 1,
+            "value": -85,
+            "title": {
+              "en": "Level, dBm",
+              "no": "Nivå, dBm"
+            }
           }
         ]
       }
