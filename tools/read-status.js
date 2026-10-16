@@ -49,10 +49,14 @@ const channels = (args.get('channels') || '').split(',').filter(Boolean).map((pa
 });
 // LINAKs skrivebord strømmer ikke status før de har fått 0xFE. Må utelukkes.
 const wakeup = args.get('wakeup') === 'true';
+// Appens egen logg er på norsk, som resten av appen. Den er støy for den
+// som kjører verktøyet, så den er av med mindre man ber om den.
+const verbose = args.get('verbose') === 'true';
 
 if (!host || !mac) {
   console.error('Usage: node tools/read-status.js --host <proxy ip> --mac <AA:BB:CC:DD:EE:FF>');
   console.error('       [--key <ESPHome api encryption key>] [--channels 18:19,22:23] [--wakeup]');
+  console.error('       [--verbose]');
   console.error('       [--command backUp] [--seconds 6] [--idle 3]');
   console.error('');
   console.error('Connects to the bed through an ESPHome Bluetooth proxy, subscribes to its');
@@ -75,6 +79,19 @@ function describe(buf) {
   return `len=${buf.length}  hex=[${hex}]  bytes=[${bytes}]  uint16le=[${words.join(' ')}]`;
 }
 
+// GATT-egenskapene som bitmaske, slik de star i BLE-spesifikasjonen. Uten
+// dem er en handle bare et tall: det er props som sier om kanalen kan
+// skrives, leses eller varsle.
+function properties(bits) {
+  const names = [];
+  if (bits & 0x02) names.push('read');
+  if (bits & 0x04) names.push('write-no-response');
+  if (bits & 0x08) names.push('write');
+  if (bits & 0x10) names.push('notify');
+  if (bits & 0x20) names.push('indicate');
+  return names.length ? names.join(', ') : 'none';
+}
+
 let frames = 0;
 
 (async () => {
@@ -82,7 +99,7 @@ let frames = 0;
     host,
     port,
     encryptionKey: encryptionKey || null,
-    log: (...parts) => console.log(stamp(), '[proxy]', ...parts),
+    log: (...parts) => { if (verbose) console.log(stamp(), '[proxy]', ...parts); },
   });
   proxy.on('error', (error) => console.error(stamp(), '[proxy error]', error.message));
 
@@ -109,9 +126,24 @@ let frames = 0;
 
     // Proben kobler opp, bonder og slipper igjen. Den gir oss handles uten å
     // røre en motor, og de er det første en annen kontrollboks må vise fram.
+    // Hele treet forst. Det er dette en bruker med en annen kontrollboks
+    // skal sende tilbake, og det er ikke noe vits i a be om det hvis
+    // verktoyet bare viser det vi kjente fra for.
+    const services = await proxy.listServices(mac, options);
+    console.log(stamp(), `GATT TREE (${services.length} services)`);
+    for (const service of services) {
+      console.log(`         service ${service.uuid}  (handle ${service.handle})`);
+      for (const ch of service.characteristics || []) {
+        const cccd = ch.cccdHandle ? `  CCCD ${ch.cccdHandle}` : '';
+        console.log(`           ${ch.uuid}  handle ${ch.handle}`
+          + `  [${properties(ch.properties)}]${cccd}`);
+      }
+    }
+    console.log('');
+
     const probed = await proxy.probe(mac, options);
     const h = probed.handles || {};
-    console.log(stamp(), 'GATT HANDLES');
+    console.log(stamp(), 'THE ONES THIS APP USES');
     console.log(`         command  99fa0002 = ${h.commandHandle}`);
     console.log(`         status   99fa0003 = ${h.statusHandle} (CCCD ${h.statusCccdHandle})`);
     console.log(`         dpg      99fa0011 = ${h.dpgHandle} (CCCD ${h.dpgCccdHandle})`);
@@ -129,7 +161,18 @@ let frames = 0;
     stopWatching = await proxy.watchStatus(mac, (data, handle) => {
       frames += 1;
       console.log(stamp(), `NOTIFY h${handle}`, describe(data));
-    }, { ...options, channels, wakeup });
+    }, {
+      ...options,
+      channels,
+      wakeup,
+      // Den leste CCCD-verdien er beviset for at abonnementet er ekte.
+      // ESPHome kvitterer notify-forespørselen uansett, så uten dette ser et
+      // dødt abonnement nøyaktig ut som et levende.
+      onSubscribed: ({ handle, cccd, cccdValue }) => {
+        console.log(stamp(), `SUBSCRIBED handle ${handle}, CCCD ${cccd} now reads ${cccdValue}`
+          + `${cccdValue === '0100' ? ' (notifications enabled)' : ' (NOT enabled)'}`);
+      },
+    });
 
     console.log(stamp(), `subscribed${wakeup ? ' (wake command sent)' : ''}, `
       + `${idleSeconds} s idle first, to see whether the bed reports on its own`);
