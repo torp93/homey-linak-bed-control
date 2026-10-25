@@ -265,6 +265,38 @@
       "uiComponent": "sensor",
       "insights": true,
       "icon": "/assets/capability-icons/connection.svg"
+    },
+    "linak_bed_back_angle": {
+      "type": "number",
+      "title": {
+        "en": "Back angle",
+        "no": "Ryggvinkel"
+      },
+      "units": {
+        "en": "°",
+        "no": "°"
+      },
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "linak_bed_leg_angle": {
+      "type": "number",
+      "title": {
+        "en": "Leg angle",
+        "no": "Beinvinkel"
+      },
+      "units": {
+        "en": "°",
+        "no": "°"
+      },
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
     }
   },
   "flow": {
@@ -813,6 +845,8 @@
         "linak_bed_leg_relief",
         "linak_bed_both_up",
         "linak_bed_both_down",
+        "linak_bed_back_angle",
+        "linak_bed_leg_angle",
         "linak_bed_connection",
         "linak_bed_signal_refresh",
         "linak_bed_signal",

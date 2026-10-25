@@ -2,6 +2,7 @@
 
 const Homey = require('homey');
 const { migrateCapabilities } = require('../../lib/capability-migration');
+const { hasPositionSupport } = require('../../lib/linak-bed-protocol');
 
 // Homey har ingen «hold inne»-hendelse — en knapp gir ett trykk, uten noe
 // signal om at brukeren slapp. Derfor kjører knappene til stopp trykkes,
@@ -90,6 +91,21 @@ const REQUIRED_CAPABILITIES = Object.freeze([
   'measure_signal_strength',
 ]);
 
+// Stillingsvisning er IKKE med i lista over. De fleste kontrollbokser har
+// ingen posisjonstjeneste, og en flis som alltid står tom er verre enn ingen
+// flis. Den legges til bare på senger der tjenesteoppdagelsen faktisk fant
+// 99fa0020 — se _requiredCapabilities.
+const POSITION_CAPABILITIES = Object.freeze([
+  'linak_bed_back_angle',
+  'linak_bed_leg_angle',
+]);
+
+// Hvilken kapabilitet hver motor rapporterer til.
+const POSITION_SECTIONS = Object.freeze({
+  back: 'linak_bed_back_angle',
+  legs: 'linak_bed_leg_angle',
+});
+
 class BedDevice extends Homey.Device {
   async onInit() {
     this._mac = this.getStoreValue('mac') || this.getData().id;
@@ -100,7 +116,19 @@ class BedDevice extends Homey.Device {
     // oppkobling. Forkastes i _onCommandError hvis de viser seg å være feil.
     this._storedHandles = this.getStoreValue('gattHandles') || null;
 
-    await migrateCapabilities(this, REQUIRED_CAPABILITIES);
+    // Senger paret før posisjonsstøtten fantes har lagrede handles uten
+    // posisjonsfeltene. Da vet vi ikke om boksen har tjenesten, og det eneste
+    // som kan svare på det er en ny tjenesteoppdagelse. Kast cachen én gang;
+    // neste kommando oppdager på nytt og lagrer den fulle formen.
+    if (this._storedHandles && this._storedHandles.backPositionHandle === undefined) {
+      this._storedHandles = null;
+      await this.unsetStoreValue('gattHandles').catch(() => {});
+      this.log('Lagrede GATT-handles er fra før posisjonsstøtten — oppdager på nytt ved neste kommando');
+    }
+
+    this._supportsPosition = this.getStoreValue('supportsPosition') === true;
+
+    await migrateCapabilities(this, this._requiredCapabilities());
 
     for (const capability of Object.keys(MOTOR_CAPABILITIES)) {
       this.registerCapabilityListener(capability, () => this._onMotorButton(capability));
@@ -472,6 +500,58 @@ class BedDevice extends Homey.Device {
     this._storedHandles = result.handles;
     await this.setStoreValue('gattHandles', result.handles).catch(() => {});
     this.log('GATT-handles lagret', result.handles);
+    await this._applyPositionSupport(result.handles);
+  }
+
+  // Kapabilitetslista er ikke konstant: den avhenger av hva boksen svarte med
+  // under tjenesteoppdagelsen. migrateCapabilities fjerner alt som ikke står
+  // her, så stillingsflisene forsvinner av seg selv på en boks uten tjenesten.
+  _requiredCapabilities() {
+    if (!this._supportsPosition) return REQUIRED_CAPABILITIES;
+    // Stillingene hører hjemme over status- og signalflisene: de beskriver
+    // sengen, ikke forbindelsen til den.
+    const capabilities = [...REQUIRED_CAPABILITIES];
+    const anchor = capabilities.indexOf('linak_bed_connection');
+    capabilities.splice(anchor, 0, ...POSITION_CAPABILITIES);
+    return capabilities;
+  }
+
+  // Kalles når ferske handles kommer inn. Endrer seg svaret, bygges
+  // kapabilitetslista om — én gang, ikke ved hver kommando.
+  async _applyPositionSupport(handles) {
+    const supported = hasPositionSupport(handles);
+    if (supported === this._supportsPosition) return;
+
+    this._supportsPosition = supported;
+    await this.setStoreValue('supportsPosition', supported).catch(() => {});
+    await migrateCapabilities(this, this._requiredCapabilities()).catch(() => {});
+    this.log(supported
+      ? 'Kontrollboksen rapporterer stilling — stillingsflisene lagt til'
+      : 'Kontrollboksen rapporterer ikke stilling — stillingsflisene fjernet');
+
+    if (supported) this.refreshPositions();
+  }
+
+  // Leser stillingen og skriver den til flisene. Bakgrunnsarbeid: en seng som
+  // ikke svarer skal ikke velte kommandoen som nettopp lyktes.
+  async refreshPositions() {
+    if (!this._supportsPosition) return null;
+
+    try {
+      const positions = await this._proxy().readPositions(this._mac, this._commandOptions());
+      for (const [section, capability] of Object.entries(POSITION_SECTIONS)) {
+        const reading = positions[section];
+        if (!reading || !Number.isFinite(reading.angle)) continue;
+        if (!this.hasCapability(capability)) continue;
+        await this.setCapabilityValue(capability, reading.angle).catch(() => {});
+      }
+      this.log(`Stilling lest — rygg ${positions.back ? `${positions.back.angle}°` : 'ukjent'}, `
+        + `bein ${positions.legs ? `${positions.legs.angle}°` : 'ukjent'}`);
+      return positions;
+    } catch (error) {
+      this.log('Stillingslesing hoppet over', error.message);
+      return null;
+    }
   }
 
   // ATT-feil 1 (Invalid Handle) betyr at de lagrede handles ikke stemmer
@@ -556,6 +636,11 @@ class BedDevice extends Homey.Device {
       await this._reportSignal(result.rssi);
       await this._markAvailable();
       await this._setConnection('idle');
+      // Stillingen leses etter at bevegelsen er ferdig, ikke under: en lesing
+      // midt i kjøringen gir et tall som er utdatert i samme sekund. Kjøres
+      // uten await — kommandoen er ferdig, og Flow-kortet skal ikke vente på
+      // en avlesning.
+      this.refreshPositions();
       return true;
     } catch (error) {
       this._onCommandError(error);
